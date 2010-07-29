@@ -1,0 +1,26 @@
+CC=@CC@
+INSTALL=@INSTALL@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libdir=@libdir@
+modulesdir=@modulesdir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+includedir=@includedir@
+mandir=@mandir@
+top_builddir=@builddir@
+
+DSOOPT=-shared -fPIC
+CFLAGS=@CFLAGS@ @COMPILER_OPTIONS_C@
+SHLIBEXT=so
+PACKAGE_VERSION=@PACKAGE_VERSION@
+
+
+LIBMAPI_CFLAGS=@LIBMAPI_CFLAGS@
+LIBMAPI_LIBS=@LIBMAPI_LIBS@
+
+LDFLAGS+=@LDFLAGS@
+LIBS+=$(LIBMAPI_LIBS)
+CFLAGS+=$(LIBMAPI_CFLAGS)
+CXXFLAGS=@CFLAGS@ @COMPILER_OPTIONS_CXX@
