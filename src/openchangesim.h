@@ -26,7 +26,7 @@
 #include <popt.h>
 #include "src/version.h"
 
-#define	DEFAULT_PROFDB	"%s/.openchange/profiles.ldb"
+#define	DEFAULT_PROFDB	"%s/.openchange/openchangesim/profiles.ldb"
 
 extern struct poptOption popt_openchange_version[];
 
