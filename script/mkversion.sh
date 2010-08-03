@@ -8,7 +8,7 @@ if test -z "$VERSION_FILE";then
 fi
 
 if test -z "$OUTPUT_FILE";then
-    $OUTPUT_FILE="libmapi/version.h"
+    $OUTPUT_FILE="src/version.h"
 fi
 
 OPENCHANGESIM_VERSION_STRING=$3
@@ -82,6 +82,6 @@ echo "#define OPENCHANGESIM_SYS_KERNEL_NAME \"${OPENCHANGESIM_SYS_KERNEL_NAME}\"
 echo "#define OPENCHANGESIM_SYS_KERNEL_RELEASE \"${OPENCHANGESIM_SYS_KERNEL_RELEASE}\"" >> $OUTPUT_FILE
 echo "#define OPENCHANGESIM_SYS_PROCESSOR \"${OPENCHANGESIM_SYS_PROCESSOR}\"" >> $OUTPUT_FILE
 
-echo "$0: '$OUTPUT_FILE' created for OpenChange libmapi(\"${OPENCHANGESIM_VERSION_STRING}\")"
+echo "$0: '$OUTPUT_FILE' created for OpenChangeSim (\"${OPENCHANGESIM_VERSION_STRING}\")"
 
 exit 0
