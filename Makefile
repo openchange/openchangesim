@@ -74,13 +74,32 @@ openchangesim-clean::
 	rm -f bin/openchangesim
 	rm -f src/*.o src/*.po
 	rm -f src/version.h
+	rm -f src/configuration.yy.c
+	rm -f src/configuration.tab.c src/configuration.tab.h
 
 clean:: openchangesim-clean
 
-bin/openchangesim:	src/version.h		\
+bin/openchangesim:	src/version.h					\
+			src/configuration.tab.po			\
+			src/configuration.yy.po				\
+			src/configuration_api.po			\
+			src/configuration_dump.po			\
+			src/openchangesim_public.po			\
 			src/openchangesim.o
 	@echo "Linking $@"
-	@$(CC) -o $@ $^ $(LIBS) $(LDFLAGS) -lpopt
+	@$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS) -lpopt
+
+src/configuration.yy.c:	src/configuration.l
+	@echo "Generating $@"
+	@$(FLEX) -t $< > $@
+
+src/configuration.tab.c: src/configuration.y
+	@echo "Generating $@"
+	@$(BISON) -d $< -o $@
+
+# Avoid warnings
+src/configuration.yy.o: CFLAGS=
+src/configuration.tab.o: CFLAGS=
 
 # This should be the last line in the makefile since other distclean rules may 
 # need config.mk

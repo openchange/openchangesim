@@ -94,6 +94,41 @@ dnl Check for install
 dnl ##################################################################
 AC_PROG_INSTALL
 
+dnl ----------------------------------------------------------------------------
+dnl Check for Flex
+dnl Flex version < 2.5.35 is fine but 2.5.4 beta is not. This is the
+dnl default version provided under FreeBSD or RHL5
+dnl ----------------------------------------------------------------------------
+
+AC_ARG_VAR([FLEX], [Location of the flex program.])
+AC_CHECK_PROG([FLEX], [flex], [flex])
+
+if test x"$FLEX" = x""; then
+   	AC_MSG_WARN([No version of flex was found!])
+   	AC_MSG_ERROR([Please install flex])
+else
+	V=`$FLEX --version | awk '{print $NF}'`
+   	W=`echo $V | awk -F. '{if (((($1*100 + $2)*100 + $3) > 20535) || $3 == 4) print "no"}'`
+   	if test "x$W" != x ; then
+	   	AC_MSG_WARN([Adjust your FLEX environment variable])
+      	   	AC_MSG_ERROR([Flex version 2.5.35 or below is needed. You have $V])
+      	fi
+fi
+AC_SUBST(FLEX)
+
+dnl ---------------------------------------------------------------------------
+dnl Check for Bison
+dnl ---------------------------------------------------------------------------
+
+AC_ARG_VAR([BISON], [Location of the bison program.])
+AC_PATH_PROG([BISON], [bison], [bison])
+
+if test x"$BISON" = x""; then
+      AC_MSG_WARN([No version of bison was found!])
+      AC_MSG_ERROR([Please install bison])
+fi
+AC_SUBST(BISON)
+
 dnl ##################################################################
 dnl Check for dependencies
 dnl ##################################################################
