@@ -48,6 +48,11 @@ struct ocsim_server
 	const char		*domain;
 	const char		*realm;
 	uint32_t		version;
+	const char		*generic_user;
+	const char		*generic_password;
+	bool			range;
+	uint32_t		range_start;
+	uint32_t		range_end;
 	struct ocsim_var	*vars;
 	struct ocsim_server	*prev;
 	struct ocsim_server	*next;

@@ -51,6 +51,16 @@ _PUBLIC_ int configuration_add_server(struct ocsim_context *ctx,
 	el->address = talloc_strdup(el, server->address);
 	el->domain = talloc_strdup(el, server->domain);
 	el->realm = talloc_strdup(el, server->realm);
+	el->generic_user = talloc_strdup(el, server->generic_user);
+	el->generic_password = talloc_strdup(el, server->generic_password);
+	el->range = server->range;
+	if (el->range == true) {
+		el->range_start = server->range_start;
+		el->range_end = server->range_end;
+	} else {
+		el->range_start = 0;
+		el->range_end = 0;
+	}
 
 	DLIST_ADD_END(ctx->servers, el, struct ocsim_server *);
 

@@ -59,12 +59,16 @@ void	yyerror(struct ocsim_context *, void *, char *);
 %token	kw_ADDRESS
 %token	kw_DOMAIN
 %token	kw_REALM
+%token	kw_GENERIC_USER
+%token	kw_GENERIC_USER_RANGE
+%token	kw_GENERIC_PASSWORD
 
 %token	OBRACE
 %token	EBRACE
 %token	SEMICOLON
 %token	COLON
 %token	EQUAL
+%token	MINUS
 
 %start keywords
 
@@ -158,6 +162,26 @@ server_content	: kw_NAME EQUAL IDENTIFIER SEMICOLON
 		| kw_REALM EQUAL STRING SEMICOLON
 		{
 			ctx->server_el->realm = talloc_strdup(ctx->server_el, $3);
+		}
+		| kw_GENERIC_USER EQUAL IDENTIFIER SEMICOLON
+		{
+			ctx->server_el->generic_user = talloc_strdup(ctx->server_el, $3);
+		}
+		| kw_GENERIC_PASSWORD EQUAL STRING SEMICOLON
+		{
+			ctx->server_el->generic_password = talloc_strdup(ctx->server_el, $3);
+		}
+		| kw_GENERIC_USER_RANGE EQUAL INTEGER MINUS INTEGER SEMICOLON
+		{
+			if ($5 < $3) {
+				printf("Invalid user range: start > end\n");
+			} else if ($5 == $3) {
+				ctx->server_el->range = false;
+			} else {
+				ctx->server_el->range = true;
+				ctx->server_el->range_start = $3;
+				ctx->server_el->range_end = $5;
+			}
 		}
 		;
 

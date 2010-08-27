@@ -45,10 +45,21 @@ _PUBLIC_ int configuration_dump_servers(struct ocsim_context *ctx)
 	DEBUG(0, ("server {\n"));
 	for (el = ctx->servers; el->next; el = el->next) {
 		DEBUG(0, ("\t%s {\n", el->name));
-		DEBUG(0, ("\t\t version\t=\t%d\n", el->version));
-		DEBUG(0, ("\t\t address\t=\t%s\n", el->address));
-		DEBUG(0, ("\t\t domain\t=\t%s\n", el->domain));
-		DEBUG(0, ("\t\t realm\t=\t%s\n", el->realm));
+		DEBUG(0, ("\t\t version\t\t= %-30d\n", el->version));
+		DEBUG(0, ("\t\t address\t\t= %s\n", el->address));
+		DEBUG(0, ("\t\t domain\t\t\t= %s\n", el->domain));
+		DEBUG(0, ("\t\t realm\t\t\t= %s\n", el->realm));
+		DEBUG(0, ("\t\t generic user\t\t= %s\n", el->generic_user ? el->generic_user :
+			  "no user supplied (!!!WARNING!!!)"));
+		if (el->range == true) {
+			DEBUG(0, ("\t\t generic user range\t= from %d to %d\n",
+				  el->range_start, el->range_end));
+		} else {
+			DEBUG(0, ("\t\t generic user range\t= none - single user\n"));
+		}
+		DEBUG(0, ("\t\t generic password\t= %s\n", 
+			  el->generic_password ? el->generic_password : 
+			  "no password supplied (!!!WARNING!!!)"));
 		DEBUG(0, ("\t}\n\n"));
 	}
 	DEBUG(0, ("}\n"));

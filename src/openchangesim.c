@@ -32,12 +32,13 @@ int main(int argc, const char *argv[])
 	bool			opt_dumpdata = false;
 	bool			opt_confcheck = false;
 	bool			opt_confdump = false;
+	bool			opt_profile_create = false;
 	const char		*opt_profdb = NULL;
 	const char		*opt_debug = NULL;
 	const char		*opt_conf_file = NULL;
 
 	enum { OPT_PROFILE_DB=1000, OPT_DEBUG, OPT_DUMPDATA, OPT_VERSION,
-	       OPT_CONFIG, OPT_CONFCHECK, OPT_CONFDUMP };
+	       OPT_CONFIG, OPT_CONFCHECK, OPT_CONFDUMP, OPT_PROFILE_CREATE };
 
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
@@ -48,6 +49,7 @@ int main(int argc, const char *argv[])
 		{ "config", 'c', POPT_ARG_STRING, NULL, OPT_CONFIG, "Specify configuration file", NULL },
 		{ "confcheck", 0, POPT_ARG_NONE, NULL, OPT_CONFCHECK, "Check/Validate configuration", NULL },
 		{ "confdump", 0, POPT_ARG_NONE, NULL, OPT_CONFDUMP, "Dump configuration", NULL },
+		{ "create-profile", 0, POPT_ARG_NONE, NULL, OPT_PROFILE_CREATE, "Create MAPI profile database", NULL },
 		{ NULL, 0, 0, NULL, 0, NULL, NULL }
 	};
 
@@ -78,6 +80,12 @@ int main(int argc, const char *argv[])
 		case OPT_CONFDUMP:
 			opt_confdump = true;
 			break;
+		case OPT_PROFILE_CREATE:
+			opt_profile_create = true;
+			break;
+		default:
+			DEBUG(0, ("Invalid option\n"));
+			exit (1);
 		}
 	}
 

@@ -59,19 +59,23 @@ static void unterminated(struct ocsim_context *, const char *, unsigned int);
 %option	noyywrap
 
 %%
-.include	{ return kw_INCLUDE; }
-server		{ return kw_SERVER; }
-scenario	{ return kw_SCENARIO; }
-name		{ return kw_NAME; }
-version		{ return kw_VERSION; }
-address		{ return kw_ADDRESS; }
-domain		{ return kw_DOMAIN; }
-realm		{ return kw_REALM; }
-\{		{ return OBRACE; }
-\}		{ return EBRACE; }
-;		{ return SEMICOLON; }
-:		{ return COLON; }
-=		{ return EQUAL; }
+.include		{ return kw_INCLUDE; }
+server			{ return kw_SERVER; }
+scenario		{ return kw_SCENARIO; }
+name			{ return kw_NAME; }
+version			{ return kw_VERSION; }
+address			{ return kw_ADDRESS; }
+domain			{ return kw_DOMAIN; }
+realm			{ return kw_REALM; }
+generic_user		{ return kw_GENERIC_USER; }
+generic_user_range	{ return kw_GENERIC_USER_RANGE; }
+generic_password	{ return kw_GENERIC_PASSWORD; }
+\{			{ return OBRACE; }
+\}			{ return EBRACE; }
+;			{ return SEMICOLON; }
+:			{ return COLON; }
+=			{ return EQUAL; }
+-			{ return MINUS; }
 \/\*			{ 
 			    struct ocsim_context *ctx = yyextra;
 			    int c, start_lineno = ctx->lineno;
