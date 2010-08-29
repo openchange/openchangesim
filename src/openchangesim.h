@@ -26,8 +26,39 @@
 #include <popt.h>
 #include "src/version.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdarg.h>
+
+#define	DEFAULT_PROFPATH_BASE	"%s/.openchange"
+#define	DEFAULT_PROFPATH	"%s/.openchange/openchangesim"
 #define	DEFAULT_PROFDB		"%s/.openchange/openchangesim/profiles.ldb"
 #define	DEFAULT_CONFFILE	"%s/.openchange/openchangesim/openchangesim.conf"
+#define	PROFNAME_TEMPLATE	"%s/%s@%s" /* server\username@realm */
+#define	PROFNAME_TEMPLATE_NB	"%s/%s%d@%s" /* server\username1@realm */
+#define	PROFNAME_USER		"%s%d"
+
+/**
+   DEBUG messages
+ */
+#define	DEBUG_FORMAT_STRING		"[*] %s\n"
+#define	DEBUG_FORMAT_STRING_ERR		"[ERROR] %s\n"
+#define	DEBUG_FORMAT_STRING_WARN	"[WARN] %s\n"
+#define	DEBUG_PROFDB_CREATED		"Profile database created"
+#define	DEBUG_CONF_FILE_KO		"Configuration file not OK!"
+#define	DEBUG_CONF_FILE_OK		"Configuration file OK"
+#define	DEBUG_ERR_OUT_OF_ADDRESS	"No more available IP address left"
+
+/**
+   HELP messages
+ */
+#define	HELP_FORMAT_STRING	"Help: %s\n"
+#define	HELP_SERVER_OPTION	"You need to specify one server using --server option"
+#define	HELP_SERVER_INVALID	"Invalid server specified"
+#define	HELP_IP_USER_RANGE	"Your IP range is insufficient given the generic user range"
+
+#define FPUTS(s, f) fprintf((f), "%s", (s))
 
 extern struct poptOption popt_openchange_version[];
 
@@ -53,6 +84,12 @@ struct ocsim_server
 	bool			range;
 	uint32_t		range_start;
 	uint32_t		range_end;
+	uint8_t			*ip_start;
+	uint8_t			*ip_end;
+	uint8_t			ip_current[4];
+	uint32_t		ip_number;
+	uint32_t		ip_used;
+	
 	struct ocsim_var	*vars;
 	struct ocsim_server	*prev;
 	struct ocsim_server	*next;
@@ -71,6 +108,7 @@ struct ocsim_context
 	/* context */
 	FILE			*fp;
 	const char		*filename;
+	FILE			*logfp;
 };
 
 #ifndef __BEGIN_DECLS
@@ -97,9 +135,26 @@ int openchangesim_do_debug(struct ocsim_context *, const char *, ...);
 
 /* The following public definitions come from src/configuration_api.c */
 int configuration_add_server(struct ocsim_context *, struct ocsim_server *);
+uint8_t *configuration_get_ip(TALLOC_CTX *, const char *);
+uint32_t configuration_get_ip_count(uint8_t *, uint8_t *);
 
 /* The following public definitions come from src/configuration_dump.c */
 int configuration_dump_servers(struct ocsim_context *);
+int configuration_dump_servers_list(struct ocsim_context *);
+struct ocsim_server *configuration_validate_server(struct ocsim_context *, const char *);
+
+/* The following public definitions come from src/openchangesim.c */
+void openchangesim_printlog(FILE *, char *);
+int openchangesim_profile(struct ocsim_context *, const char *);
+enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *, char *, struct ocsim_server *);
+enum MAPISTATUS openchangesim_CreateProfile(TALLOC_CTX *, struct ocsim_server *, char *, const char *);
+uint32_t callback(struct SRowSet *, void *);
+
+/* The following public definitions come from src/openchangesim_interface.c */
+void openchangesim_interface_get_next_ip(struct ocsim_server *, bool);
+int openchangesim_create_interface_tap(TALLOC_CTX *, uint32_t, char *);
+int openchangesim_delete_interface_tap(TALLOC_CTX *, uint32_t);
+int openchangesim_delete_interfaces(struct ocsim_context *, const char *);
 
 void error_message (struct ocsim_context *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 

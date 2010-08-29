@@ -54,6 +54,7 @@ _PUBLIC_ int configuration_add_server(struct ocsim_context *ctx,
 	el->generic_user = talloc_strdup(el, server->generic_user);
 	el->generic_password = talloc_strdup(el, server->generic_password);
 	el->range = server->range;
+
 	if (el->range == true) {
 		el->range_start = server->range_start;
 		el->range_end = server->range_end;
@@ -62,7 +63,101 @@ _PUBLIC_ int configuration_add_server(struct ocsim_context *ctx,
 		el->range_end = 0;
 	}
 
+	el->ip_start = talloc_steal(el, server->ip_start);
+	el->ip_end = talloc_steal(el, server->ip_end);
+
+	el->ip_number = server->ip_number;
+
 	DLIST_ADD_END(ctx->servers, el, struct ocsim_server *);
 
 	return OCSIM_SUCCESS;
+}
+
+/**
+   \details Split an IP address represented as a string into an array
+   of uint8_t
+
+   \param mem_ctx pointer to the memory context
+   \param ip_address the ip address to analyze
+
+   \return pointer to the uint8_t array on success, otherwise NULL
+*/
+uint8_t	*configuration_get_ip(TALLOC_CTX *mem_ctx, const char *ip_address)
+{
+	int		i;
+	int		index;
+	int		pos;
+	char		*tmp;
+	uint8_t		*ip;
+
+	ip = talloc_array(mem_ctx, uint8_t, 4);
+	for (i = 0, pos = 0, index = 0; i < strlen(ip_address); i++) {
+		if (ip_address[i] == '.') {
+			tmp = talloc_strndup(mem_ctx, &ip_address[pos], i - pos);
+			ip[index] = atoi(tmp);
+			if (ip[index] >= 255) {
+				ip = NULL;
+				goto end;
+			}
+			pos = i + 1;
+			index++;
+			talloc_free(tmp);
+		}
+		if (index == 3) {
+			break;
+		}
+	}
+	tmp = talloc_strdup(mem_ctx, &ip_address[pos]);
+	ip[index] = atoi(tmp);
+end:
+	talloc_free(tmp);
+
+	return ip;
+}
+
+/**
+   \details Calculate the available number of IP within the start-end
+   range.
+
+   \param start pointer to the uint8 array with starting IP address
+   \param end pointer to the uint8 array with ending IP address
+
+   \return number of available IP address
+ */
+uint32_t configuration_get_ip_count(uint8_t *start, uint8_t *end)
+{
+	int	diff;
+	int	count = 0;
+
+	/* sanity checks */
+	if (start[0] > end[0]) return 0;
+	if (start[1] > end[1]) return 0;
+
+	/* X.X.X.X 
+	   | | | |_ 255
+	   | | |___ 65.025
+	   | |_____ 16.581.375
+	   |_______ 4.228.250.625
+
+	   The tool will only supports a maximum of 5.000 concurrent
+	   clients. So we assume (for convenience purposes) that we
+	   will have a class B network max.
+	 */
+	diff = end[2] - start[2];
+	if (diff) {
+		/* This is a class B */
+		count = 254 * (diff + 1);
+		count -= 254 - start[3];
+		count -= end[3] + 1;
+		
+		return count;
+	}
+
+	/* This is a class C */
+	diff = end[3] - start[3];
+	if (diff) {
+		return diff + 1;
+	}
+
+	return 0;
 }

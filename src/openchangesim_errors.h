@@ -54,6 +54,7 @@ do {								\
 #define	OCSIM_INITIALIZED		"OpenChangeSim context has already been initialized"
 #define	OCSIM_NOT_INITIALIZED		"OpenChangeSim context has not been initialized"
 #define	OCSIM_INVALID_PARAMETER		"Invalid parameter"
+#define	OCSIM_INVALID_SERVER		"Invalid server supplied"
 #define	OCSIM_MEMORY_ERROR		"Not enough resources for memory allocation"
 #define	OCSIM_CONF_ERROR		"Error in configuration file"
 

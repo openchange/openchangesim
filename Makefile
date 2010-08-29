@@ -85,6 +85,7 @@ bin/openchangesim:	src/version.h					\
 			src/configuration_api.po			\
 			src/configuration_dump.po			\
 			src/openchangesim_public.po			\
+			src/openchangesim_interface.po			\
 			src/openchangesim.o
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS) -lpopt

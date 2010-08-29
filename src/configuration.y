@@ -62,6 +62,7 @@ void	yyerror(struct ocsim_context *, void *, char *);
 %token	kw_GENERIC_USER
 %token	kw_GENERIC_USER_RANGE
 %token	kw_GENERIC_PASSWORD
+%token	kw_IP_RANGE
 
 %token	OBRACE
 %token	EBRACE
@@ -182,6 +183,19 @@ server_content	: kw_NAME EQUAL IDENTIFIER SEMICOLON
 				ctx->server_el->range_start = $3;
 				ctx->server_el->range_end = $5;
 			}
+		}
+		| kw_IP_RANGE EQUAL IP_ADDRESS MINUS IP_ADDRESS SEMICOLON
+		{
+			ctx->server_el->ip_start = configuration_get_ip(ctx->mem_ctx, $3);
+			if (!ctx->server_el->ip_start) {
+				yyerror(ctx, NULL, "Invalid IP address for start range");
+			}
+			ctx->server_el->ip_end   = configuration_get_ip(ctx->mem_ctx, $5);
+			
+			ctx->server_el->ip_number = configuration_get_ip_count(ctx->server_el->ip_start, 
+									       ctx->server_el->ip_end);
+
+			printf("Maximum number of IP: %d\n", ctx->server_el->ip_number);
 		}
 		;
 

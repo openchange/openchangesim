@@ -66,3 +66,71 @@ _PUBLIC_ int configuration_dump_servers(struct ocsim_context *ctx)
 
 	return OCSIM_SUCCESS;
 }
+
+
+/**
+   \details Dump available servers list from OpenChangeSim configuration file
+
+   \param ctx pointer to the OpenChangeSim context
+
+   \return OCSIM_SUCCESS on success, otherwise OCSIM_ERROR
+ */
+_PUBLIC_ int configuration_dump_servers_list(struct ocsim_context *ctx)
+{
+	struct ocsim_server	*el;
+	uint32_t		user_nb = 0;
+
+	/* Sanity checks */
+	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
+	OCSIM_RETVAL_IF(!ctx->servers, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
+
+	DEBUG(0, ("Available servers:\n"));
+	for (el = ctx->servers; el->next; el = el->next) {
+		if (el->range == false) {
+			if (el->generic_user && el->generic_password) {
+				DEBUG(0, ("\t* %s (1 user)\n", el->name));
+			} else {
+				DEBUG(0, ("\t* %s (0 user ... !!!WARNING!!!)\n", el->name));
+			}
+		} else {
+			user_nb = el->range_end - el->range_start + 1; /*including 1st record */
+			DEBUG(0, ("\t* %s (%d users)\n", el->name, user_nb));
+		}
+	}
+
+	return OCSIM_SUCCESS;
+}
+
+
+/**
+   \details Ensure the specified server exists within the
+   configuration, is valid for further processing and return a pointer
+   on the server entry if it meets requirements.
+
+   \param ctx pointer to the OpenChangeSim context
+   \param server pointer to the server to user
+
+   \return valid pointer on ocsim_server entry on success, otherwise NULL
+ */
+struct ocsim_server *configuration_validate_server(struct ocsim_context *ctx, 
+						   const char *server)
+{
+	struct ocsim_server	*el;
+
+	/* Sanity checks */
+	if (!ctx || !ctx->servers || !server) {
+		return NULL;
+	}
+
+	for (el = ctx->servers; el->next; el = el->next) {
+		if (el->name && !strcmp(el->name, server)) {
+			if (el->generic_user && el->generic_password) {
+				return el;
+			} else {
+				return NULL;
+			}
+		}
+	}
+
+	return NULL;
+}
