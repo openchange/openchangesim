@@ -91,7 +91,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
 			}
 			ip_address = talloc_asprintf(mem_ctx, "%d.%d.%d.%d", el->ip_current[0], 
 						     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
-			mapi_profile_add_string_attr(profname_dst, "localaddress", ip_address);
+			mapi_profile_modify_string_attr(profname_dst, "localaddress", ip_address);
 			if (openchangesim_create_interface_tap(mem_ctx, el->ip_used, ip_address) < 0) {
 				exit (1);
 			}
@@ -107,7 +107,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
 		talloc_free(profname_dst);
 	}
 
-	logstr = talloc_asprintf(mem_ctx, "[*] %d User profiles ready %200s\n", profile_nb, "");
+	logstr = talloc_asprintf(mem_ctx, "[*] %d User profiles ready %200s", profile_nb, "");
 	openchangesim_printlog(f, logstr);
 	talloc_free(logstr);
 	printf("\n");
@@ -262,8 +262,9 @@ int openchangesim_profile(struct ocsim_context *ctx, const char *server)
 						   el->generic_user, el->range_start);
 			retval = openchangesim_CreateProfile(ctx->mem_ctx, el,
 							     profname, username);
-			mapi_profile_add_string_attr(profname, "localaddress", ip_address);
 			talloc_free(username);
+			if (retval) return OCSIM_ERROR;
+			mapi_profile_add_string_attr(profname, "localaddress", ip_address);
 		}
 		if (openchangesim_create_interface_tap(ctx->mem_ctx, el->ip_used, ip_address) < 0) {
 			exit (1);
@@ -467,9 +468,29 @@ int main(int argc, const char *argv[])
 		SetMAPIDebugLevel(atoi(opt_debug));
 	}
 
-	/* Step 4. Perform profile operations */
+	/* Step 5. Load modules */
+	ret = openchangesim_register_modules(ctx);
+	if (ret == OCSIM_ERROR) {
+		goto end;
+	}
+
+	/* Step 6. Perform profile operations */
 	ret = openchangesim_profile(ctx, opt_server);
 	if (ret == OCSIM_ERROR) {
+		goto end;
+	}
+
+	/* Step 7. Call fork process model */
+	ret = openchangesim_fork_process_start(ctx, opt_server);
+	if (ret == OCSIM_ERROR) {
+		DEBUG(0, ("Error with the prefork model\n"));
+		goto end;
+	}
+
+	/* Step 8, Wait for all forked children */
+	ret = openchangesim_fork_process_end(ctx, opt_server);
+	if (ret == OCSIM_ERROR) {
+		DEBUG(0, ("Error ending the prefork model\n"));
 		goto end;
 	}
 

@@ -73,6 +73,7 @@ openchangesim-uninstall:
 openchangesim-clean::
 	rm -f bin/openchangesim
 	rm -f src/*.o src/*.po
+	rm -f src/*/*.po
 	rm -f src/version.h
 	rm -f src/configuration.yy.c
 	rm -f src/configuration.tab.c src/configuration.tab.h
@@ -86,7 +87,11 @@ bin/openchangesim:	src/version.h					\
 			src/configuration_dump.po			\
 			src/openchangesim_public.po			\
 			src/openchangesim_interface.po			\
-			src/openchangesim.o
+			src/openchangesim_modules.po			\
+			src/openchangesim_fork.po			\
+			src/openchangesim.po				\
+			src/modules/module_fetchmail.po			\
+			src/modules/module_sendmail.po			
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS) -lpopt
 

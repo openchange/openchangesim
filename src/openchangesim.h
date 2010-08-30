@@ -43,6 +43,8 @@
    DEBUG messages
  */
 #define	DEBUG_FORMAT_STRING		"[*] %s\n"
+#define	DEBUG_FORMAT_STRING_MODULE	"\t[*] %-20s: %s\n"
+#define	DEBUG_FORMAT_STRING_MODULE_ERR	"\t[*] [ERROR] %-20s: %s\n"
 #define	DEBUG_FORMAT_STRING_ERR		"[ERROR] %s\n"
 #define	DEBUG_FORMAT_STRING_WARN	"[WARN] %s\n"
 #define	DEBUG_PROFDB_CREATED		"Profile database created"
@@ -95,6 +97,15 @@ struct ocsim_server
 	struct ocsim_server	*next;
 };
 
+struct ocsim_module
+{
+	struct ocsim_module	*prev;		/* !< Pointer to the previous module */
+	struct ocsim_module	*next;		/* !< Pointer to the next module */
+	char			*name;		/* !< The name of the test suite */
+	char			*description;	/*!< Description of the module */
+	void			*private_data;	/*!< Private data of the module */
+};
+
 struct ocsim_context
 {
 	TALLOC_CTX		*mem_ctx;
@@ -105,10 +116,12 @@ struct ocsim_context
 	/* ocsim */
 	struct ocsim_server	*servers;
 	struct ocsim_var	*options;
+	struct ocsim_module	*modules;
 	/* context */
 	FILE			*fp;
 	const char		*filename;
 	FILE			*logfp;
+	pid_t			*pid;
 };
 
 #ifndef __BEGIN_DECLS
@@ -155,6 +168,25 @@ void openchangesim_interface_get_next_ip(struct ocsim_server *, bool);
 int openchangesim_create_interface_tap(TALLOC_CTX *, uint32_t, char *);
 int openchangesim_delete_interface_tap(TALLOC_CTX *, uint32_t);
 int openchangesim_delete_interfaces(struct ocsim_context *, const char *);
+
+/* The following public definitions come from src/openchangesim_fork.c */
+uint32_t openchangesim_fork_process_start(struct ocsim_context *, const char *);
+uint32_t openchangesim_fork_process_end(struct ocsim_context *, const char *);
+
+/* The following public definitions come from src/openchangesim_modules.c */
+uint32_t openchangesim_register_modules(struct ocsim_context *);
+uint32_t openchangesim_module_register(struct ocsim_context *, struct ocsim_module *);
+struct ocsim_module *openchangesim_module_init(struct ocsim_context *, const char *, const char *);
+uint32_t openchangesim_modules_run(struct ocsim_context *, char *);
+
+/* The following public definitions come from src/modules/module_fetchmail.c */
+uint32_t module_fetchmail_init(struct ocsim_context *);
+uint32_t module_fetchmail_run(TALLOC_CTX *, struct mapi_session *);
+
+
+/* The following public definitions come from src/modules/module_sendmail.c */
+uint32_t module_sendmail_init(struct ocsim_context *);
+uint32_t module_sendmail_run(TALLOC_CTX *, struct mapi_session *);
 
 void error_message (struct ocsim_context *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 
