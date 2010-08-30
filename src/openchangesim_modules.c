@@ -28,6 +28,7 @@ uint32_t openchangesim_register_modules(struct ocsim_context *ctx)
 	DEBUG(0, (DEBUG_FORMAT_STRING, "Initializing modules"));
 	ret = module_fetchmail_init(ctx);
 	ret = module_sendmail_init(ctx);
+	ret = module_cleanup_init(ctx);
 
 	return ret;
 }
@@ -103,12 +104,16 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, char *profname)
 		retval = module_fetchmail_run(ctx, session);
 		if (retval) {
 			DEBUG(0, ("Error in child %d: module fetchmail: 0x%x\n", getpid(), retval));
+			break;
 		}
 		retval = module_sendmail_run(ctx, session);
 		if (retval) {
 			DEBUG(0, ("Error in child: module sendmail\n"));
+			break;
 		}
 	}
+
+	module_cleanup_run(ctx, session);
 
 	return OCSIM_SUCCESS;
 }

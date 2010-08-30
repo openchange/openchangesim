@@ -80,7 +80,6 @@ uint32_t openchangesim_fork_process_end(struct ocsim_context *ctx, const char *s
 
 	for (i = 0; i < range; i++) {
 		waitpid(ctx->pid[i], &status, 0);
-		DEBUG(0, ("In father: pid %d finished\n", ctx->pid[i]));
 		ctx->pid[i] = 0;
 	}
 	return OCSIM_SUCCESS;

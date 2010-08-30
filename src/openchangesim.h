@@ -60,6 +60,11 @@
 #define	HELP_SERVER_INVALID	"Invalid server specified"
 #define	HELP_IP_USER_RANGE	"Your IP range is insufficient given the generic user range"
 
+/**
+   Common template strings
+ */
+#define	DFLT_SUBJECT_PREFIX	"[OPENCHANGESIM]"
+
 #define FPUTS(s, f) fprintf((f), "%s", (s))
 
 extern struct poptOption popt_openchange_version[];
@@ -183,10 +188,13 @@ uint32_t openchangesim_modules_run(struct ocsim_context *, char *);
 uint32_t module_fetchmail_init(struct ocsim_context *);
 uint32_t module_fetchmail_run(TALLOC_CTX *, struct mapi_session *);
 
-
 /* The following public definitions come from src/modules/module_sendmail.c */
 uint32_t module_sendmail_init(struct ocsim_context *);
 uint32_t module_sendmail_run(TALLOC_CTX *, struct mapi_session *);
+
+/* The following public definitions come from src/modules/module_cleanup.c */
+uint32_t module_cleanup_init(struct ocsim_context *);
+uint32_t module_cleanup_run(TALLOC_CTX *, struct mapi_session *);
 
 void error_message (struct ocsim_context *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 

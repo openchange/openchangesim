@@ -91,7 +91,8 @@ bin/openchangesim:	src/version.h					\
 			src/openchangesim_fork.po			\
 			src/openchangesim.po				\
 			src/modules/module_fetchmail.po			\
-			src/modules/module_sendmail.po			
+			src/modules/module_sendmail.po			\
+			src/modules/module_cleanup.po			
 	@echo "Linking $@"
 	@$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS) -lpopt
 

@@ -131,7 +131,7 @@ uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 
 	/* Set message properties */
 	msgflag = MSGFLAG_SUBMIT;
-	subject = talloc_asprintf(mem_ctx, "Mail from %s\n", session->profile->mailbox);
+	subject = talloc_asprintf(mem_ctx, "%s Mail from %s\n", DFLT_SUBJECT_PREFIX, session->profile->mailbox);
 	set_SPropValue_proptag(&lpProps[0], PR_SUBJECT, (const void *) subject);
 	set_SPropValue_proptag(&lpProps[1], PR_MESSAGE_FLAGS, (const void *)&msgflag);
 	body = talloc_asprintf(mem_ctx, "Body of message with subject: %s", subject);
