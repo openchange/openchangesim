@@ -51,6 +51,10 @@
 #define	DEBUG_CONF_FILE_KO		"Configuration file not OK!"
 #define	DEBUG_CONF_FILE_OK		"Configuration file OK"
 #define	DEBUG_ERR_OUT_OF_ADDRESS	"No more available IP address left"
+#define	DEBUG_ERR_DUPLICATE		"Duplicate scenario"
+#define	DEBUG_ERR_MISSING_NAME		"A scenario defined in the configuration file is missing the required name parameter"
+#define	DEBUG_ERR_INVALID_NAME		"A scenario name defined in the configuration file doesn't exist"
+
 
 /**
    HELP messages
@@ -64,6 +68,12 @@
    Common template strings
  */
 #define	DFLT_SUBJECT_PREFIX	"[OPENCHANGESIM]"
+
+/**
+   Module names
+ */
+#define	SENDMAIL_MODULE_NAME	"sendmail"
+#define	FETCHMAIL_MODULE_NAME	"fetchmail"
 
 #define FPUTS(s, f) fprintf((f), "%s", (s))
 
@@ -102,6 +112,35 @@ struct ocsim_server
 	struct ocsim_server	*next;
 };
 
+struct ocsim_scenario_sendmail
+{
+	uint32_t		attachments_count;
+	char			**attachments;
+};
+
+struct ocsim_scenario
+{
+	const char		*name;
+	uint32_t		repeat;
+	void			*private_data;
+	struct ocsim_scenario	*prev;
+	struct ocsim_scenario	*next;
+};
+
+/**
+   Generic scenario structure for parser. Superset of all available
+   parameters. This structure is converted into ocsim_scenarion and
+   additional (scenario's specific parameters) casted into
+   private_data.
+ */
+struct ocsim_generic_scenario
+{
+	const char		*name;
+	uint32_t		repeat;
+	char			**attachments;
+	uint32_t		attachments_count;
+};
+
 struct ocsim_module
 {
 	struct ocsim_module	*prev;		/* !< Pointer to the previous module */
@@ -109,24 +148,30 @@ struct ocsim_module
 	char			*name;		/* !< The name of the test suite */
 	char			*description;	/*!< Description of the module */
 	void			*private_data;	/*!< Private data of the module */
+
+	uint32_t		(*run)(TALLOC_CTX *, struct mapi_session *);
+	uint32_t		(*set_ref_count)(struct ocsim_module *, int);
+	uint32_t		(*get_ref_count)(struct ocsim_module *);
 };
 
 struct ocsim_context
 {
 	TALLOC_CTX		*mem_ctx;
 	/* lexer internal data */
-	struct ocsim_server	*server_el;
-	unsigned int		lineno;
-	int			result;
+	struct ocsim_server		*server_el;
+	struct ocsim_generic_scenario	*scenario_el;
+	unsigned int			lineno;
+	int				result;
 	/* ocsim */
-	struct ocsim_server	*servers;
-	struct ocsim_var	*options;
-	struct ocsim_module	*modules;
+	struct ocsim_server		*servers;
+	struct ocsim_scenario		*scenarios;
+	struct ocsim_var		*options;
+	struct ocsim_module		*modules;
 	/* context */
-	FILE			*fp;
-	const char		*filename;
-	FILE			*logfp;
-	pid_t			*pid;
+	FILE				*fp;
+	const char			*filename;
+	FILE				*logfp;
+	pid_t				*pid;
 };
 
 #ifndef __BEGIN_DECLS
@@ -153,13 +198,16 @@ int openchangesim_do_debug(struct ocsim_context *, const char *, ...);
 
 /* The following public definitions come from src/configuration_api.c */
 int configuration_add_server(struct ocsim_context *, struct ocsim_server *);
+int configuration_add_scenario(struct ocsim_context *, struct ocsim_generic_scenario *);
 uint8_t *configuration_get_ip(TALLOC_CTX *, const char *);
 uint32_t configuration_get_ip_count(uint8_t *, uint8_t *);
 
 /* The following public definitions come from src/configuration_dump.c */
 int configuration_dump_servers(struct ocsim_context *);
 int configuration_dump_servers_list(struct ocsim_context *);
+int configuration_dump_scenarios(struct ocsim_context *);
 struct ocsim_server *configuration_validate_server(struct ocsim_context *, const char *);
+struct ocsim_scenario *configuration_validate_scenario(struct ocsim_context *, const char *);
 
 /* The following public definitions come from src/openchangesim.c */
 void openchangesim_printlog(FILE *, char *);
@@ -182,15 +230,17 @@ uint32_t openchangesim_fork_process_end(struct ocsim_context *, const char *);
 uint32_t openchangesim_register_modules(struct ocsim_context *);
 uint32_t openchangesim_module_register(struct ocsim_context *, struct ocsim_module *);
 struct ocsim_module *openchangesim_module_init(struct ocsim_context *, const char *, const char *);
+bool openchangesim_module_ref_count(struct ocsim_context *);
+uint32_t module_get_ref_count(struct ocsim_module *);
+uint32_t module_set_ref_count(struct ocsim_module *, int);
+void *module_get_scenario_data(struct ocsim_context *, const char *);
 uint32_t openchangesim_modules_run(struct ocsim_context *, char *);
 
 /* The following public definitions come from src/modules/module_fetchmail.c */
 uint32_t module_fetchmail_init(struct ocsim_context *);
-uint32_t module_fetchmail_run(TALLOC_CTX *, struct mapi_session *);
 
 /* The following public definitions come from src/modules/module_sendmail.c */
 uint32_t module_sendmail_init(struct ocsim_context *);
-uint32_t module_sendmail_run(TALLOC_CTX *, struct mapi_session *);
 
 /* The following public definitions come from src/modules/module_cleanup.c */
 uint32_t module_cleanup_init(struct ocsim_context *);

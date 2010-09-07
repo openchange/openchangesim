@@ -92,7 +92,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
 			ip_address = talloc_asprintf(mem_ctx, "%d.%d.%d.%d", el->ip_current[0], 
 						     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
 			mapi_profile_modify_string_attr(profname_dst, "localaddress", ip_address);
-			if (openchangesim_create_interface_tap(mem_ctx, el->ip_used, ip_address) < 0) {
+			if (openchangesim_create_interface_tap(mem_ctx, el->ip_used + 1, ip_address) < 0) {
 				exit (1);
 			}
 			talloc_free(ip_address);
@@ -405,6 +405,7 @@ int main(int argc, const char *argv[])
 	/* confdump work case */
 	if (opt_confdump) {
 		configuration_dump_servers(ctx);
+		configuration_dump_scenarios(ctx);
 		openchangesim_release(ctx);
 		exit (0);
 	}

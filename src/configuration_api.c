@@ -73,6 +73,81 @@ _PUBLIC_ int configuration_add_server(struct ocsim_context *ctx,
 	return OCSIM_SUCCESS;
 }
 
+
+/**
+   \details Add a scenario parsed from configuration file to the list
+   of available scenarios
+
+   \param ctx pointer to the openchangesim context
+   \param gscenario pointer to the current generic scenario record to
+   be added
+
+   \return OCSIM_SUCCESS on success, otherwise OCSIM_ERROR
+ */
+_PUBLIC_ int configuration_add_scenario(struct ocsim_context *ctx,
+					struct ocsim_generic_scenario *gscenario)
+{
+	struct ocsim_scenario	*el;
+	int			i;
+
+	/* Sanity checks */
+	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
+	OCSIM_RETVAL_IF(!gscenario, OCSIM_ERROR, OCSIM_INVALID_PARAMETER, NULL);
+
+	DEBUG(0, ("==> %s\n", gscenario->name));
+
+	if (!gscenario->name) {
+		DEBUG(0, (DEBUG_FORMAT_STRING_ERR, DEBUG_ERR_MISSING_NAME));
+		return OCSIM_ERROR;
+	}
+
+	/* Ensure the scenario has not already been added */
+	if (configuration_validate_scenario(ctx, gscenario->name)) {
+		DEBUG(0, (DEBUG_FORMAT_STRING_MODULE_ERR, gscenario->name, DEBUG_ERR_DUPLICATE));
+		return OCSIM_ERROR;
+	}
+	
+
+	if (!strcasecmp(gscenario->name, SENDMAIL_MODULE_NAME)) {
+		struct ocsim_scenario_sendmail	*sendmail;
+
+		el = talloc_zero(ctx->mem_ctx, struct ocsim_scenario);
+		sendmail = talloc_zero(el, struct ocsim_scenario_sendmail);
+
+		el->name = talloc_strdup(el, gscenario->name);
+		el->repeat = gscenario->repeat;
+		
+		sendmail->attachments_count = gscenario->attachments_count;
+		sendmail->attachments = talloc_array(sendmail, char *, sendmail->attachments_count + 2);
+		for (i = 0; i < sendmail->attachments_count; i++) {
+			sendmail->attachments[i] = talloc_strdup(sendmail->attachments, gscenario->attachments[i]);
+		}
+		el->private_data = (void *) sendmail;
+
+		DLIST_ADD_END(ctx->scenarios, el, struct ocsim_scenario *);
+
+	} else if (!strcasecmp(gscenario->name, FETCHMAIL_MODULE_NAME)) {
+		el = talloc_zero(ctx->mem_ctx, struct ocsim_scenario);
+		el->name = talloc_strdup(el, gscenario->name);
+		el->repeat = gscenario->repeat;
+		el->private_data = NULL;
+
+		DLIST_ADD_END(ctx->scenarios, el, struct ocsim_scenario *);
+	}
+
+	{
+		int i;
+
+		for (i = 0; i < gscenario->attachments_count; i++) {
+			DEBUG(0, ("attachment: %s\n", gscenario->attachments[i]));
+		}
+	}	
+
+
+	return OCSIM_SUCCESS;
+}
+
+
 /**
    \details Split an IP address represented as a string into an array
    of uint8_t

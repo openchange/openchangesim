@@ -71,6 +71,8 @@ generic_user		{ return kw_GENERIC_USER; }
 generic_user_range	{ return kw_GENERIC_USER_RANGE; }
 generic_password	{ return kw_GENERIC_PASSWORD; }
 ip_range		{ return kw_IP_RANGE; } 
+repeat			{ return kw_REPEAT; }
+attachment		{ return kw_ATTACHMENT; }
 \{			{ return OBRACE; }
 \}			{ return EBRACE; }
 ;			{ return SEMICOLON; }

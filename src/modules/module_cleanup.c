@@ -21,17 +21,6 @@
 
 #include "src/openchangesim.h"
 
-uint32_t module_cleanup_init(struct ocsim_context *ctx)
-{
-	int			ret;
-	struct ocsim_module	*module = NULL;
-
-	module = openchangesim_module_init(ctx, "cleanup", "cleanup mailboxes");
-	ret = openchangesim_module_register(ctx, module);
-
-	return ret;
-}
-
 /**
    \details Very basic cleanup script: empty Inbox, Outbox and Sent Items folders
  */
@@ -76,4 +65,20 @@ uint32_t module_cleanup_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 	}
 
 	return OCSIM_SUCCESS;
+}
+
+
+uint32_t module_cleanup_init(struct ocsim_context *ctx)
+{
+	int			ret;
+	struct ocsim_module	*module = NULL;
+
+	module = openchangesim_module_init(ctx, "cleanup", "cleanup mailboxes");
+	module->set_ref_count = module_set_ref_count;
+	module->get_ref_count = module_get_ref_count;
+	module->private_data = module_get_scenario_data(ctx, FETCHMAIL_MODULE_NAME);
+
+	ret = openchangesim_module_register(ctx, module);
+
+	return ret;
 }

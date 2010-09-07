@@ -28,7 +28,7 @@ uint32_t openchangesim_register_modules(struct ocsim_context *ctx)
 	DEBUG(0, (DEBUG_FORMAT_STRING, "Initializing modules"));
 	ret = module_fetchmail_init(ctx);
 	ret = module_sendmail_init(ctx);
-	ret = module_cleanup_init(ctx);
+	/* ret = module_cleanup_init(ctx); */
 
 	return ret;
 }
@@ -85,12 +85,84 @@ struct ocsim_module *openchangesim_module_init(struct ocsim_context *ctx,
 	return module;
 }
 
+bool openchangesim_module_ref_count(struct ocsim_context *ctx)
+{
+	struct ocsim_module	*el = NULL;
+
+	if (!ctx || !ctx->modules) return true;
+
+	for (el = ctx->modules; el; el = el->next) {
+		if (el->get_ref_count(el) > 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+   \details Retrieve the counter (repeat) value for the module
+
+   \param module pointer to the OpenChangeSim module
+
+   \return repeat value on success, otherwise OCSIM_ERROR
+ */
+uint32_t module_get_ref_count(struct ocsim_module *module)
+{
+	struct ocsim_scenario	*scenario;
+
+	if (!module) return OCSIM_ERROR;
+
+	scenario = (struct ocsim_scenario *)module->private_data;
+	if (!scenario) return OCSIM_ERROR;
+
+	return scenario->repeat;
+}
+
+/**
+   \details Retrieve the counter (repeat) value for the module
+
+   \param module pointer to the OpenChangeSim module
+   \param incr the incrementer value to use
+
+   \return OCSIM_SUCCESS on success, otherwise OCSIM_ERROR
+ */
+uint32_t module_set_ref_count(struct ocsim_module *module, int incr)
+{
+	struct ocsim_scenario	*scenario;
+
+	if (!module) return OCSIM_ERROR;
+
+	scenario = (struct ocsim_scenario *)module->private_data;
+	if (!scenario) return OCSIM_ERROR;
+
+	scenario->repeat += incr;
+	if (scenario->repeat < 0) {
+		scenario->repeat = 0;
+	}
+
+	return OCSIM_SUCCESS;
+}
+
+void *module_get_scenario_data(struct ocsim_context *ctx, const char *name)
+{
+	struct ocsim_scenario	*el;
+
+	for (el = ctx->scenarios; el; el = el->next) {
+		if (el->name && !strncasecmp(el->name, name, strlen(name))) {
+			return (void *)el;
+		}
+	}
+
+	return NULL;
+}
+
 uint32_t openchangesim_modules_run(struct ocsim_context *ctx, char *profname)
 {
-	int			i;
 	TALLOC_CTX		*mem_ctx;
 	enum MAPISTATUS		retval;
 	struct mapi_session	*session = NULL;
+	struct ocsim_module	*el = NULL;
 
 	mem_ctx = talloc_named(NULL, 0, "openchangesim_modules_run");
 	if (!mem_ctx) {
@@ -100,18 +172,14 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, char *profname)
 
 	retval = MapiLogonEx(&session, profname, NULL);
 
-	for (i = 0; i < 3000; i++) {
-		retval = module_fetchmail_run(ctx, session);
-		if (retval) {
-			DEBUG(0, ("Error in child %d: module fetchmail: 0x%x\n", getpid(), retval));
-			break;
+	do {
+		for (el = ctx->modules; el; el = el->next) {
+			if (el->get_ref_count(el) > 0) {
+				el->run(ctx, session);
+				el->set_ref_count(el, -1);
+			}
 		}
-		retval = module_sendmail_run(ctx, session);
-		if (retval) {
-			DEBUG(0, ("Error in child: module sendmail\n"));
-			break;
-		}
-	}
+	} while (openchangesim_module_ref_count(ctx) == true);
 
 	module_cleanup_run(ctx, session);
 

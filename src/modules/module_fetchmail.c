@@ -21,17 +21,6 @@
 
 #include "src/openchangesim.h"
 
-uint32_t module_fetchmail_init(struct ocsim_context *ctx)
-{
-	int			ret;
-	struct ocsim_module	*module = NULL;
-
-	module = openchangesim_module_init(ctx, "fetchmail", "fetchmail scenario");
-	ret = openchangesim_module_register(ctx, module);
-
-	return ret;
-}
-
 static void *fetchmail_get_propval(struct SRow *aRow, 
 				   uint32_t proptag)
 {
@@ -207,7 +196,7 @@ static enum MAPISTATUS fetchmail_get_contents(TALLOC_CTX *mem_ctx,
 	return MAPI_E_SUCCESS;
 }
 
-uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
+static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 {
 	enum MAPISTATUS		retval;
 	mapi_object_t		obj_store;
@@ -302,3 +291,28 @@ uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 
 	return OCSIM_SUCCESS;
 }
+
+
+/**
+   \details Initialize the fetchmail module
+
+   \param ctx pointer to the ocsim_context
+
+   \return OCSIM_SUCCESS on success, otherwise OCSIM_ERROR
+ */
+uint32_t module_fetchmail_init(struct ocsim_context *ctx)
+{
+	int			ret;
+	struct ocsim_module	*module = NULL;
+
+	module = openchangesim_module_init(ctx, "fetchmail", "fetchmail scenario");
+	module->run = module_fetchmail_run;
+	module->set_ref_count = module_set_ref_count;
+	module->get_ref_count = module_get_ref_count;
+	module->private_data = module_get_scenario_data(ctx, FETCHMAIL_MODULE_NAME);
+	
+	ret = openchangesim_module_register(ctx, module);
+
+	return ret;
+}
+

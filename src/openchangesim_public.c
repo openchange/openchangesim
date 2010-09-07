@@ -58,6 +58,9 @@ _PUBLIC_ struct ocsim_context *openchangesim_init(TALLOC_CTX *mem_ctx)
 	ctx->servers = talloc_zero(mem_ctx, struct ocsim_server);
 	OCSIM_RETVAL_IF(!ctx->servers, NULL, OCSIM_MEMORY_ERROR, NULL);
 
+	ctx->scenarios = talloc_zero(mem_ctx, struct ocsim_scenario);
+	OCSIM_RETVAL_IF(!ctx->scenarios, NULL, OCSIM_MEMORY_ERROR, NULL);
+
 	ctx->options = talloc_zero(mem_ctx, struct ocsim_var);
 	OCSIM_RETVAL_IF(!ctx->options, NULL, OCSIM_MEMORY_ERROR, NULL);
 

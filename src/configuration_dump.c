@@ -102,13 +102,34 @@ _PUBLIC_ int configuration_dump_servers_list(struct ocsim_context *ctx)
 }
 
 
+_PUBLIC_ int configuration_dump_scenarios(struct ocsim_context *ctx)
+{
+	struct ocsim_scenario	*el;
+
+	/* Sanity checks */
+	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
+	OCSIM_RETVAL_IF(!ctx->scenarios, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
+
+	DEBUG(0, ("scenario {\n"));
+	for (el = ctx->scenarios; el->next; el = el->next) {
+		DEBUG (0, ("\t{\n"));
+		DEBUG(0, ("\t\t name\t\t= %-30s\n", el->name));
+		DEBUG(0, ("\t\t repeat\t\t= %d\n", el->repeat));
+		DEBUG(0, ("\t}\n"));
+	}
+	DEBUG(0, ("}\n"));
+
+	return OCSIM_SUCCESS;
+}
+
+
 /**
    \details Ensure the specified server exists within the
    configuration, is valid for further processing and return a pointer
    on the server entry if it meets requirements.
 
    \param ctx pointer to the OpenChangeSim context
-   \param server pointer to the server to user
+   \param server pointer to the server to use
 
    \return valid pointer on ocsim_server entry on success, otherwise NULL
  */
@@ -129,6 +150,36 @@ struct ocsim_server *configuration_validate_server(struct ocsim_context *ctx,
 			} else {
 				return NULL;
 			}
+		}
+	}
+
+	return NULL;
+}
+
+
+/**
+   \details Ensure the specified scenario exists within the
+   configuration, is valid for further processing and return a pointer
+   on the scenario entry.
+
+   \param ctx pointer to the OpenChangeSim context
+   \param name scenario name to validate
+
+   \return valid pointer on ocsim_scenario entry on success, otherwise NULL
+ */
+struct ocsim_scenario	*configuration_validate_scenario(struct ocsim_context *ctx,
+							 const char *scenario)
+{
+	struct ocsim_scenario	*el;
+
+	/* Sanity checks */
+	if (!ctx || !ctx->scenarios || !scenario) {
+		return NULL;
+	}
+
+	for (el = ctx->scenarios; el->next; el = el->next) {
+		if (el->name && !strcmp(el->name, scenario)) {
+			return el;
 		}
 	}
 

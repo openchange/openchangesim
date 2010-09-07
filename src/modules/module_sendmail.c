@@ -21,21 +21,10 @@
 
 #include "src/openchangesim.h"
 
-uint32_t module_sendmail_init(struct ocsim_context *ctx)
-{
-	int			ret;
-	struct ocsim_module	*module = NULL;
-
-	module = openchangesim_module_init(ctx, "sendmail", "sendmail scenario");
-	ret = openchangesim_module_register(ctx, module);
-
-	return ret;
-}
-
 /**
    \details Create a sample mail with attachment
  */
-uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
+static uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 {
 	enum MAPISTATUS		retval;
 	mapi_object_t		obj_store;
@@ -62,8 +51,7 @@ uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 	}
 
 	/* Open default outbox folder */
-	/* retval = GetDefaultFolder(&obj_store, &id_outbox, olFolderSentMail); */
-	retval = GetDefaultFolder(&obj_store, &id_outbox, olFolderInbox);
+	retval = GetDefaultFolder(&obj_store, &id_outbox, olFolderSentMail);
 	if (retval) {
 		mapi_errstr("GetDefaultFolder", GetLastError());
 		return OCSIM_ERROR;
@@ -130,7 +118,7 @@ uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 	}
 
 	/* Set message properties */
-	msgflag = MSGFLAG_SUBMIT;
+	msgflag = MSGFLAG_UNSENT|MSGFLAG_FROMME;
 	subject = talloc_asprintf(mem_ctx, "%s Mail from %s\n", DFLT_SUBJECT_PREFIX, session->profile->mailbox);
 	set_SPropValue_proptag(&lpProps[0], PR_SUBJECT, (const void *) subject);
 	set_SPropValue_proptag(&lpProps[1], PR_MESSAGE_FLAGS, (const void *)&msgflag);
@@ -148,19 +136,19 @@ uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 	}
 
 	/* Save changes on message */
-	retval = SaveChangesMessage(&obj_outbox, &obj_message, KeepOpenReadOnly);
-	if (retval) {
-		mapi_errstr("SaveChangesMessage", GetLastError());
-		return OCSIM_ERROR;
-	}
-
-	/* Submit the message */
-	/* retval = SubmitMessage(&obj_message); */
+	/* retval = SaveChangesMessage(&obj_outbox, &obj_message, KeepOpenReadOnly); */
 	/* if (retval) { */
-	/* 	fprintf(stderr, "error in SubmitMessage: 0x%x\n", GetLastError()); */
-	/* 	mapi_errstr("SubmitMessage", GetLastError()); */
+	/* 	mapi_errstr("SaveChangesMessage", GetLastError()); */
 	/* 	return OCSIM_ERROR; */
 	/* } */
+
+	/* Submit the message */
+	retval = SubmitMessage(&obj_message);
+	if (retval) {
+		fprintf(stderr, "error in SubmitMessage: 0x%x\n", GetLastError());
+		mapi_errstr("SubmitMessage", GetLastError());
+		return OCSIM_ERROR;
+	}
 
 	mapi_object_release(&obj_message);
 	mapi_object_release(&obj_outbox);
@@ -168,3 +156,28 @@ uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
 
 	return OCSIM_SUCCESS;
 }
+
+
+/**
+   \details Initialize the sendmail module
+
+   \param ctx pointer to the ocsim_context
+
+   \return OCSIM_SUCCESS on success, otherwise OCSIM_ERROR
+ */
+uint32_t module_sendmail_init(struct ocsim_context *ctx)
+{
+	int			ret;
+	struct ocsim_module	*module = NULL;
+
+	module = openchangesim_module_init(ctx, SENDMAIL_MODULE_NAME, "sendmail scenario");
+	module->run = module_sendmail_run;
+	module->set_ref_count = module_set_ref_count;
+	module->get_ref_count = module_get_ref_count;
+	module->private_data = module_get_scenario_data(ctx, SENDMAIL_MODULE_NAME);
+
+	ret = openchangesim_module_register(ctx, module);
+
+	return ret;
+}
+

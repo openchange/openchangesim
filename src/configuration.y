@@ -63,6 +63,8 @@ void	yyerror(struct ocsim_context *, void *, char *);
 %token	kw_GENERIC_USER_RANGE
 %token	kw_GENERIC_PASSWORD
 %token	kw_IP_RANGE
+%token	kw_REPEAT
+%token	kw_ATTACHMENT
 
 %token	OBRACE
 %token	EBRACE
@@ -80,6 +82,12 @@ keywords	:
 			if (!ctx->server_el) {
 				ctx->server_el = talloc_zero(ctx->servers, struct ocsim_server);
 			}
+			if (!ctx->scenario_el) {
+				ctx->scenario_el = talloc_zero(ctx->scenarios, struct ocsim_generic_scenario);
+				ctx->scenario_el->repeat = 0;
+				ctx->scenario_el->attachments_count = 0;
+				ctx->scenario_el->attachments = talloc_array(ctx->scenario_el, char *, 2);
+			}
 		}
 		| keywords kvalues
 		;
@@ -87,6 +95,7 @@ keywords	:
 kvalues		: include
 		| set
 		| server
+		| scenario
 		;
 
 include		:
@@ -199,7 +208,41 @@ server_content	: kw_NAME EQUAL IDENTIFIER SEMICOLON
 		}
 		;
 
+scenario	:
+		kw_SCENARIO OBRACE scenario_contents EBRACE SEMICOLON
+		{
+			configuration_add_scenario(ctx, ctx->scenario_el);
+			talloc_free(ctx->scenario_el);
+			ctx->scenario_el = talloc_zero(ctx->scenarios, struct ocsim_generic_scenario);
+			ctx->scenario_el->repeat = 0;
+			ctx->scenario_el->attachments_count = 0;
+			ctx->scenario_el->attachments = talloc_array(ctx->scenario_el, char *, 2);
 
+		}
+
+scenario_contents: | scenario_contents scenario_content
+		{
+		}
+		;
+
+scenario_content: kw_NAME EQUAL IDENTIFIER SEMICOLON
+		{
+			ctx->scenario_el->name = talloc_strdup(ctx->scenario_el, $3);
+		}
+		| kw_NAME EQUAL STRING SEMICOLON
+		{
+			ctx->scenario_el->name = talloc_strdup(ctx->scenario_el, $3);
+		}
+		| kw_REPEAT EQUAL INTEGER SEMICOLON
+		{
+			ctx->scenario_el->repeat = $3;
+		}
+		| kw_ATTACHMENT EQUAL STRING SEMICOLON
+		{
+			ctx->scenario_el->attachments = talloc_realloc(ctx->scenario_el, ctx->scenario_el->attachments, char *, ctx->scenario_el->attachments_count + 2);
+			ctx->scenario_el->attachments[ctx->scenario_el->attachments_count] = talloc_strdup(ctx->scenario_el->attachments, $3);
+			ctx->scenario_el->attachments_count += 1;
+		}
 
 %%
 
