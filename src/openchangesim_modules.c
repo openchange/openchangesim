@@ -113,7 +113,7 @@ uint32_t module_get_ref_count(struct ocsim_module *module)
 
 	if (!module) return OCSIM_ERROR;
 
-	scenario = (struct ocsim_scenario *)module->private_data;
+	scenario = (struct ocsim_scenario *)module->scenario;
 	if (!scenario) return OCSIM_ERROR;
 
 	return scenario->repeat;
@@ -133,7 +133,7 @@ uint32_t module_set_ref_count(struct ocsim_module *module, int incr)
 
 	if (!module) return OCSIM_ERROR;
 
-	scenario = (struct ocsim_scenario *)module->private_data;
+	scenario = (struct ocsim_scenario *)module->scenario;
 	if (!scenario) return OCSIM_ERROR;
 
 	scenario->repeat += incr;
@@ -144,13 +144,26 @@ uint32_t module_set_ref_count(struct ocsim_module *module, int incr)
 	return OCSIM_SUCCESS;
 }
 
-void *module_get_scenario_data(struct ocsim_context *ctx, const char *name)
+struct ocsim_scenario *module_get_scenario(struct ocsim_context *ctx, const char *name)
 {
 	struct ocsim_scenario	*el;
 
 	for (el = ctx->scenarios; el; el = el->next) {
 		if (el->name && !strncasecmp(el->name, name, strlen(name))) {
-			return (void *)el;
+			return el;
+		}
+	}
+
+	return NULL;
+}
+
+struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *ctx, const char *name)
+{
+	struct ocsim_scenario	*el;
+
+	for (el = ctx->scenarios; el; el = el->next) {
+		if (el->name && !strncasecmp(el->name, name, strlen(name))) {
+			return el->cases;
 		}
 	}
 
@@ -175,7 +188,7 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, char *profname)
 	do {
 		for (el = ctx->modules; el; el = el->next) {
 			if (el->get_ref_count(el) > 0) {
-				el->run(ctx, session);
+				el->run(ctx, el->cases, session);
 				el->set_ref_count(el, -1);
 			}
 		}

@@ -26,6 +26,7 @@
 #include <popt.h>
 #include "src/version.h"
 
+#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -112,19 +113,41 @@ struct ocsim_server
 	struct ocsim_server	*next;
 };
 
+enum ocsim_scenario_body_type {
+	OCSIM_BODY_NONE = 0,
+	OCSIM_BODY_UTF8_INLINE,
+	OCSIM_BODY_HTML_INLINE,
+	OCSIM_BODY_UTF8_FILE,
+	OCSIM_BODY_HTML_FILE,
+	OCSIM_BODY_RTF_FILE
+};
+
+/**
+   sendmail scenario can control body and attachments within its cases
+ */
 struct ocsim_scenario_sendmail
 {
-	uint32_t		attachments_count;
-	char			**attachments;
+	enum ocsim_scenario_body_type	body_type;
+	char				*body_file;
+	char				*body_inline;
+	uint32_t			attachment_count;
+	char				**attachments;
+};
+
+struct ocsim_scenario_case
+{
+	void				*private_data;
+	struct ocsim_scenario_case	*prev;
+	struct ocsim_scenario_case	*next;
 };
 
 struct ocsim_scenario
 {
-	const char		*name;
-	uint32_t		repeat;
-	void			*private_data;
-	struct ocsim_scenario	*prev;
-	struct ocsim_scenario	*next;
+	const char			*name;
+	uint32_t			repeat;
+	struct ocsim_scenario_case	*cases;
+	struct ocsim_scenario		*prev;
+	struct ocsim_scenario		*next;
 };
 
 /**
@@ -133,45 +156,57 @@ struct ocsim_scenario
    additional (scenario's specific parameters) casted into
    private_data.
  */
+struct ocsim_generic_scenario_case
+{
+	enum ocsim_scenario_body_type		body_type;
+	char					*body_file;
+	char					*body_inline;
+	uint32_t				attachment_count;
+	char					**attachments;
+	struct ocsim_generic_scenario_case	*prev;
+	struct ocsim_generic_scenario_case	*next;
+};
+
 struct ocsim_generic_scenario
 {
-	const char		*name;
-	uint32_t		repeat;
-	char			**attachments;
-	uint32_t		attachments_count;
+	const char				*name;
+	uint32_t				repeat;
+	struct ocsim_generic_scenario_case	*case_el;
 };
 
 struct ocsim_module
 {
-	struct ocsim_module	*prev;		/* !< Pointer to the previous module */
-	struct ocsim_module	*next;		/* !< Pointer to the next module */
-	char			*name;		/* !< The name of the test suite */
-	char			*description;	/*!< Description of the module */
-	void			*private_data;	/*!< Private data of the module */
+	struct ocsim_module		*prev;		/* !< Pointer to the previous module */
+	struct ocsim_module		*next;		/* !< Pointer to the next module */
+	char				*name;		/* !< The name of the test suite */
+	char				*description;	/* !< Description of the module */
+	struct ocsim_scenario		*scenario;	/* !< The associated scenario */
+	struct ocsim_scenario_case	*cases;		/*!< execution cases for the module */
 
-	uint32_t		(*run)(TALLOC_CTX *, struct mapi_session *);
-	uint32_t		(*set_ref_count)(struct ocsim_module *, int);
-	uint32_t		(*get_ref_count)(struct ocsim_module *);
+	uint32_t			(*run)(TALLOC_CTX *, struct ocsim_scenario_case *, struct mapi_session *);
+	uint32_t			(*set_ref_count)(struct ocsim_module *, int);
+	uint32_t			(*get_ref_count)(struct ocsim_module *);
 };
 
 struct ocsim_context
 {
 	TALLOC_CTX		*mem_ctx;
 	/* lexer internal data */
-	struct ocsim_server		*server_el;
-	struct ocsim_generic_scenario	*scenario_el;
-	unsigned int			lineno;
-	int				result;
+	struct ocsim_server			*server_el;
+	struct ocsim_generic_scenario		*scenario_el;
+	struct ocsim_generic_scenario_case	*case_el;
+	unsigned int				lineno;
+	int					result;
 	/* ocsim */
-	struct ocsim_server		*servers;
-	struct ocsim_scenario		*scenarios;
-	struct ocsim_var		*options;
-	struct ocsim_module		*modules;
+	struct ocsim_server			*servers;
+	struct ocsim_scenario			*scenarios;
+	struct ocsim_var			*options;
+	struct ocsim_module			*modules;
 	/* context */
-	FILE				*fp;
-	const char			*filename;
-	FILE				*logfp;
-	pid_t				*pid;
+	FILE					*fp;
+	const char				*filename;
+	FILE					*logfp;
+	pid_t					*pid;
 };
 
 #ifndef __BEGIN_DECLS
@@ -199,6 +234,7 @@ int openchangesim_do_debug(struct ocsim_context *, const char *, ...);
 /* The following public definitions come from src/configuration_api.c */
 int configuration_add_server(struct ocsim_context *, struct ocsim_server *);
 int configuration_add_scenario(struct ocsim_context *, struct ocsim_generic_scenario *);
+int configuration_add_generic_scenario_case(struct ocsim_generic_scenario *, struct ocsim_generic_scenario_case *);
 uint8_t *configuration_get_ip(TALLOC_CTX *, const char *);
 uint32_t configuration_get_ip_count(uint8_t *, uint8_t *);
 
@@ -233,7 +269,8 @@ struct ocsim_module *openchangesim_module_init(struct ocsim_context *, const cha
 bool openchangesim_module_ref_count(struct ocsim_context *);
 uint32_t module_get_ref_count(struct ocsim_module *);
 uint32_t module_set_ref_count(struct ocsim_module *, int);
-void *module_get_scenario_data(struct ocsim_context *, const char *);
+struct ocsim_scenario *module_get_scenario(struct ocsim_context *, const char *);
+struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *, const char *);
 uint32_t openchangesim_modules_run(struct ocsim_context *, char *);
 
 /* The following public definitions come from src/modules/module_fetchmail.c */

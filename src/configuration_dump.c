@@ -104,20 +104,57 @@ _PUBLIC_ int configuration_dump_servers_list(struct ocsim_context *ctx)
 
 _PUBLIC_ int configuration_dump_scenarios(struct ocsim_context *ctx)
 {
-	struct ocsim_scenario	*el;
+	struct ocsim_scenario		*el;
+	struct ocsim_scenario_case	*elc;
+	struct ocsim_scenario_sendmail	*sendmail;
+	int				i;
+	int				j;
 
 	/* Sanity checks */
 	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
 	OCSIM_RETVAL_IF(!ctx->scenarios, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
 
-	DEBUG(0, ("scenario {\n"));
 	for (el = ctx->scenarios; el->next; el = el->next) {
-		DEBUG (0, ("\t{\n"));
-		DEBUG(0, ("\t\t name\t\t= %-30s\n", el->name));
-		DEBUG(0, ("\t\t repeat\t\t= %d\n", el->repeat));
-		DEBUG(0, ("\t}\n"));
+		DEBUG(0, ("scenario %s {\n", el->name));
+		DEBUG(0, ("\t repeat\t\t= %d\n\n", el->repeat));
+		for (elc = el->cases, i = 0; elc; elc = elc->next, i++) {
+			DEBUG(0, ("\t scenario case %d {\n", i));
+			if (!strcasecmp(el->name, SENDMAIL_MODULE_NAME)) {
+				sendmail = (struct ocsim_scenario_sendmail *) elc->private_data;
+				switch (sendmail->body_type) {
+				case OCSIM_BODY_NONE:
+					DEBUG(0, ("\t\t body\t\t\t= GENERIC\n"));
+					break;
+				case OCSIM_BODY_UTF8_INLINE:
+					DEBUG(0, ("\t\t body\t\t\t= INLINE UTF8\n"));
+					DEBUG(0, ("\t\t content = %s\n", sendmail->body_inline));
+					break;
+				case OCSIM_BODY_HTML_INLINE:
+					DEBUG(0, ("\t\t body\t\t\t= INLINE HTML\n"));
+					DEBUG(0, ("\t\t content = %s\n", sendmail->body_inline));
+					break;
+				case OCSIM_BODY_UTF8_FILE:
+					DEBUG(0, ("\t\t body\t\t\t= UTF8 FILE\n"));
+					DEBUG(0, ("\t\t filename\t\t= %s\n", sendmail->body_file));
+					break;
+				case OCSIM_BODY_HTML_FILE:
+					DEBUG(0, ("\t\t body\t\t\t= HTML FILE\n"));
+					DEBUG(0, ("\t\t filename\t\t= %s\n", sendmail->body_file));
+					break;
+				case OCSIM_BODY_RTF_FILE:
+					DEBUG(0, ("\t\t body\t\t\t= RTF FILE\n"));
+					DEBUG(0, ("\t\t filename\t\t= %s\n", sendmail->body_file));
+					break;
+				}
+				DEBUG(0, ("\t\t attachments\t\t= %d\n", sendmail->attachment_count));
+				for (j = 0; j < sendmail->attachment_count; j++) {
+					DEBUG(0, ("\t\t attachment\t\t= %s\n", sendmail->attachments[j]));
+				}
+			}
+			DEBUG(0, ("\t };\n\n"));
+		}
+		DEBUG(0, ("}\n"));
 	}
-	DEBUG(0, ("}\n"));
 
 	return OCSIM_SUCCESS;
 }
@@ -170,7 +207,7 @@ struct ocsim_server *configuration_validate_server(struct ocsim_context *ctx,
 struct ocsim_scenario	*configuration_validate_scenario(struct ocsim_context *ctx,
 							 const char *scenario)
 {
-	struct ocsim_scenario	*el;
+	struct ocsim_scenario	*el = NULL;
 
 	/* Sanity checks */
 	if (!ctx || !ctx->scenarios || !scenario) {

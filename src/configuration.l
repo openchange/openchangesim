@@ -62,6 +62,12 @@ static void unterminated(struct ocsim_context *, const char *, unsigned int);
 .include		{ return kw_INCLUDE; }
 server			{ return kw_SERVER; }
 scenario		{ return kw_SCENARIO; }
+case			{ return kw_CASE; }
+file_utf8		{ return kw_FILE_UTF8; };
+file_html		{ return kw_FILE_HTML; };
+file_rtf		{ return kw_FILE_RTF; };
+inline_utf8		{ return kw_INLINE_UTF8; };
+inline_html		{ return kw_INLINE_HTML; };
 name			{ return kw_NAME; }
 version			{ return kw_VERSION; }
 address			{ return kw_ADDRESS; }

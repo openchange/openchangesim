@@ -94,8 +94,6 @@ _PUBLIC_ int configuration_add_scenario(struct ocsim_context *ctx,
 	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
 	OCSIM_RETVAL_IF(!gscenario, OCSIM_ERROR, OCSIM_INVALID_PARAMETER, NULL);
 
-	DEBUG(0, ("==> %s\n", gscenario->name));
-
 	if (!gscenario->name) {
 		DEBUG(0, (DEBUG_FORMAT_STRING_ERR, DEBUG_ERR_MISSING_NAME));
 		return OCSIM_ERROR;
@@ -109,44 +107,94 @@ _PUBLIC_ int configuration_add_scenario(struct ocsim_context *ctx,
 	
 
 	if (!strcasecmp(gscenario->name, SENDMAIL_MODULE_NAME)) {
-		struct ocsim_scenario_sendmail	*sendmail;
+		struct ocsim_scenario_sendmail		*sendmail;
+		struct ocsim_scenario_case		*element;
+		struct ocsim_generic_scenario_case	*elm;
 
 		el = talloc_zero(ctx->mem_ctx, struct ocsim_scenario);
-		sendmail = talloc_zero(el, struct ocsim_scenario_sendmail);
-
+		el->cases = NULL;
 		el->name = talloc_strdup(el, gscenario->name);
 		el->repeat = gscenario->repeat;
-		
-		sendmail->attachments_count = gscenario->attachments_count;
-		sendmail->attachments = talloc_array(sendmail, char *, sendmail->attachments_count + 2);
-		for (i = 0; i < sendmail->attachments_count; i++) {
-			sendmail->attachments[i] = talloc_strdup(sendmail->attachments, gscenario->attachments[i]);
-		}
-		el->private_data = (void *) sendmail;
+
+		for (elm = gscenario->case_el; elm; elm = elm->next) {
+			element = talloc_zero(el, struct ocsim_scenario_case);
+			sendmail = talloc_zero(element, struct ocsim_scenario_sendmail);
+			
+			sendmail->body_type = elm->body_type;
+			switch (sendmail->body_type) {
+			case OCSIM_BODY_NONE:
+				sendmail->body_inline = NULL;
+				sendmail->body_file = NULL;
+				break;
+			case OCSIM_BODY_UTF8_INLINE:
+			case OCSIM_BODY_HTML_INLINE:
+				sendmail->body_inline = talloc_strdup(sendmail, elm->body_inline);
+				break;
+			case OCSIM_BODY_UTF8_FILE:
+			case OCSIM_BODY_HTML_FILE:
+			case OCSIM_BODY_RTF_FILE:
+				sendmail->body_file = talloc_strdup(sendmail, elm->body_file);
+				break;
+			}
+			sendmail->attachment_count = elm->attachment_count;
+			sendmail->attachments = talloc_array(sendmail, char *, sendmail->attachment_count + 2);
+			for (i = 0; i < sendmail->attachment_count; i++) {
+				sendmail->attachments[i] = talloc_strdup(sendmail->attachments, elm->attachments[i]);
+			}
+			element->private_data = (void *) sendmail;
+			DLIST_ADD_END(el->cases, element, struct ocsim_scenario_case);
+		}		
 
 		DLIST_ADD_END(ctx->scenarios, el, struct ocsim_scenario *);
 
 	} else if (!strcasecmp(gscenario->name, FETCHMAIL_MODULE_NAME)) {
 		el = talloc_zero(ctx->mem_ctx, struct ocsim_scenario);
+		el->cases = NULL;
 		el->name = talloc_strdup(el, gscenario->name);
 		el->repeat = gscenario->repeat;
-		el->private_data = NULL;
 
 		DLIST_ADD_END(ctx->scenarios, el, struct ocsim_scenario *);
 	}
 
-	{
-		int i;
-
-		for (i = 0; i < gscenario->attachments_count; i++) {
-			DEBUG(0, ("attachment: %s\n", gscenario->attachments[i]));
-		}
-	}	
-
-
 	return OCSIM_SUCCESS;
 }
 
+
+_PUBLIC_ int configuration_add_generic_scenario_case(struct ocsim_generic_scenario *gscenario,
+						     struct ocsim_generic_scenario_case *gcase)
+{
+	struct ocsim_generic_scenario_case	*el;
+	int					i;
+
+	el = talloc_zero(gscenario, struct ocsim_generic_scenario_case);
+	el->body_type = gcase->body_type;
+
+	switch (el->body_type) {
+	case OCSIM_BODY_NONE:
+		el->body_inline = NULL;
+		el->body_file = NULL;
+		break;
+	case OCSIM_BODY_UTF8_INLINE:
+	case OCSIM_BODY_HTML_INLINE:
+		el->body_inline = talloc_strdup(el, gcase->body_inline);
+		break;
+	case OCSIM_BODY_UTF8_FILE:
+	case OCSIM_BODY_HTML_FILE:
+	case OCSIM_BODY_RTF_FILE:
+		el->body_file = talloc_strdup(el, gcase->body_file);
+		break;
+	}
+
+	el->attachment_count = gcase->attachment_count;
+	el->attachments = talloc_array(el, char *, gcase->attachment_count + 2);
+	for (i = 0; i < el->attachment_count; i++) {
+		el->attachments[i] = talloc_strdup(el->attachments, gcase->attachments[i]);
+	}
+
+	DLIST_ADD_END(gscenario->case_el, el, struct ocsim_generic_scenario_case);
+
+	return OCSIM_SUCCESS;
+}
 
 /**
    \details Split an IP address represented as a string into an array

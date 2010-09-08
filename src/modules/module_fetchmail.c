@@ -196,7 +196,9 @@ static enum MAPISTATUS fetchmail_get_contents(TALLOC_CTX *mem_ctx,
 	return MAPI_E_SUCCESS;
 }
 
-static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, struct mapi_session *session)
+static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, 
+				     struct ocsim_scenario_case *scase,
+				     struct mapi_session *session)
 {
 	enum MAPISTATUS		retval;
 	mapi_object_t		obj_store;
@@ -309,7 +311,8 @@ uint32_t module_fetchmail_init(struct ocsim_context *ctx)
 	module->run = module_fetchmail_run;
 	module->set_ref_count = module_set_ref_count;
 	module->get_ref_count = module_get_ref_count;
-	module->private_data = module_get_scenario_data(ctx, FETCHMAIL_MODULE_NAME);
+	module->scenario = module_get_scenario(ctx, FETCHMAIL_MODULE_NAME);
+	module->cases = module_get_scenario_data(ctx, FETCHMAIL_MODULE_NAME);
 	
 	ret = openchangesim_module_register(ctx, module);
 

@@ -76,7 +76,8 @@ uint32_t module_cleanup_init(struct ocsim_context *ctx)
 	module = openchangesim_module_init(ctx, "cleanup", "cleanup mailboxes");
 	module->set_ref_count = module_set_ref_count;
 	module->get_ref_count = module_get_ref_count;
-	module->private_data = module_get_scenario_data(ctx, FETCHMAIL_MODULE_NAME);
+	module->scenario = NULL;
+	module->cases = NULL;
 
 	ret = openchangesim_module_register(ctx, module);
 

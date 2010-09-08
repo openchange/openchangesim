@@ -54,6 +54,7 @@ void	yyerror(struct ocsim_context *, void *, char *);
 %token	kw_INCLUDE
 %token	kw_SERVER
 %token	kw_SCENARIO
+%token	kw_CASE
 %token	kw_NAME
 %token	kw_VERSION
 %token	kw_ADDRESS
@@ -65,6 +66,11 @@ void	yyerror(struct ocsim_context *, void *, char *);
 %token	kw_IP_RANGE
 %token	kw_REPEAT
 %token	kw_ATTACHMENT
+%token	kw_FILE_UTF8
+%token	kw_FILE_HTML
+%token	kw_FILE_RTF
+%token	kw_INLINE_UTF8
+%token	kw_INLINE_HTML
 
 %token	OBRACE
 %token	EBRACE
@@ -85,8 +91,15 @@ keywords	:
 			if (!ctx->scenario_el) {
 				ctx->scenario_el = talloc_zero(ctx->scenarios, struct ocsim_generic_scenario);
 				ctx->scenario_el->repeat = 0;
-				ctx->scenario_el->attachments_count = 0;
-				ctx->scenario_el->attachments = talloc_array(ctx->scenario_el, char *, 2);
+				ctx->scenario_el->case_el = NULL;
+			}
+			if (!ctx->case_el) {
+				ctx->case_el = talloc_zero(ctx->scenario_el, 
+							   struct ocsim_generic_scenario_case);
+				ctx->case_el->body_file = NULL;
+				ctx->case_el->body_inline = NULL;
+				ctx->case_el->attachment_count = 0;
+				ctx->case_el->attachments = talloc_array(ctx->case_el, char *, 2);
 			}
 		}
 		| keywords kvalues
@@ -108,19 +121,15 @@ include		:
 set		:
 		IDENTIFIER EQUAL STRING
 		{
-			printf("IDENTIFIER EQUAL STRING: %s = %s\n", $1, $3);
 		}
 		| IDENTIFIER EQUAL INTEGER
 		{
-			printf("IDENTIFIER EQUAL INTEGER: %s = %d\n", $1, $3);	
 		}
 		| IDENTIFIER EQUAL IDENTIFIER
 		{
-			printf("IDENTIFIER EQUAL IDENTIFIER: %s = %s\n", $1, $3);	
 		}
 		| IDENTIFIER EQUAL VAR
 		{
-			printf("IDENTIFIER EQUAL VAR: %s = %s\n", $1, $3);
 		}
 		;
 
@@ -204,7 +213,6 @@ server_content	: kw_NAME EQUAL IDENTIFIER SEMICOLON
 			ctx->server_el->ip_number = configuration_get_ip_count(ctx->server_el->ip_start, 
 									       ctx->server_el->ip_end);
 
-			printf("Maximum number of IP: %d\n", ctx->server_el->ip_number);
 		}
 		;
 
@@ -215,9 +223,6 @@ scenario	:
 			talloc_free(ctx->scenario_el);
 			ctx->scenario_el = talloc_zero(ctx->scenarios, struct ocsim_generic_scenario);
 			ctx->scenario_el->repeat = 0;
-			ctx->scenario_el->attachments_count = 0;
-			ctx->scenario_el->attachments = talloc_array(ctx->scenario_el, char *, 2);
-
 		}
 
 scenario_contents: | scenario_contents scenario_content
@@ -237,11 +242,81 @@ scenario_content: kw_NAME EQUAL IDENTIFIER SEMICOLON
 		{
 			ctx->scenario_el->repeat = $3;
 		}
-		| kw_ATTACHMENT EQUAL STRING SEMICOLON
+		| scenario_case
 		{
-			ctx->scenario_el->attachments = talloc_realloc(ctx->scenario_el, ctx->scenario_el->attachments, char *, ctx->scenario_el->attachments_count + 2);
-			ctx->scenario_el->attachments[ctx->scenario_el->attachments_count] = talloc_strdup(ctx->scenario_el->attachments, $3);
-			ctx->scenario_el->attachments_count += 1;
+			configuration_add_generic_scenario_case(ctx->scenario_el, ctx->case_el);
+			talloc_free(ctx->case_el);
+			ctx->case_el = talloc_zero(ctx->scenario_el, struct ocsim_generic_scenario_case);
+			ctx->case_el->body_type = 0;
+			ctx->case_el->body_file = NULL;
+			ctx->case_el->body_inline = NULL;
+			ctx->case_el->attachment_count = 0;
+			ctx->case_el->attachments = talloc_array(ctx->case_el, char *, 2);
+		}
+		;
+
+scenario_case	: kw_CASE OBRACE scases EBRACE SEMICOLON
+		{
+		}
+
+scases:		| scases scase		
+
+scase		: kw_ATTACHMENT EQUAL STRING SEMICOLON
+		{
+		  ctx->case_el->attachments = talloc_realloc(ctx->case_el, ctx->case_el->attachments, char *,
+							     ctx->case_el->attachment_count + 2);
+		  ctx->case_el->attachments[ctx->case_el->attachment_count] = talloc_strdup(ctx->case_el->attachments, $3);
+		  ctx->case_el->attachment_count += 1;
+		}
+		| kw_FILE_UTF8 EQUAL STRING SEMICOLON
+		{
+			if (ctx->case_el->body_type == OCSIM_BODY_NONE) {
+				ctx->case_el->body_type = OCSIM_BODY_UTF8_FILE;
+				ctx->case_el->body_file = talloc_strdup(ctx->case_el, $3);
+			} else {
+				printf("%s: %d\n", "body already specificed for this case", ctx->lineno);
+				exit (1);
+			}
+		}
+		| kw_FILE_HTML EQUAL STRING SEMICOLON
+		{
+			if (ctx->case_el->body_type == OCSIM_BODY_NONE) {
+				ctx->case_el->body_type = OCSIM_BODY_HTML_FILE;
+				ctx->case_el->body_file = talloc_strdup(ctx->case_el, $3);
+			} else {
+				printf("%s: %d\n", "body already specificed for this case", ctx->lineno);
+				exit (1);
+			}
+		}
+		| kw_FILE_RTF EQUAL STRING SEMICOLON
+		{
+			if (ctx->case_el->body_type == OCSIM_BODY_NONE) {
+				ctx->case_el->body_type = OCSIM_BODY_RTF_FILE;
+				ctx->case_el->body_file = talloc_strdup(ctx->case_el, $3);
+			} else {
+				printf("%s: %d\n", "body already specificed for this case", ctx->lineno);
+				exit (1);
+			}			
+		}
+		| kw_INLINE_UTF8 EQUAL STRING SEMICOLON
+		{
+			if (ctx->case_el->body_type == OCSIM_BODY_NONE) {
+				ctx->case_el->body_type = OCSIM_BODY_UTF8_INLINE;
+				ctx->case_el->body_inline = talloc_strdup(ctx->case_el, $3);
+			} else {
+				printf("%s: %d\n", "body already specificed for this case", ctx->lineno);
+				exit (1);
+			}						
+		}
+		| kw_INLINE_HTML EQUAL STRING SEMICOLON
+		{
+			if (ctx->case_el->body_type == OCSIM_BODY_NONE) {
+				ctx->case_el->body_type = OCSIM_BODY_HTML_INLINE;
+				ctx->case_el->body_inline = talloc_strdup(ctx->case_el, $3);
+			} else {
+				printf("%s: %d\n", "body already specificed for this case", ctx->lineno);
+				exit (1);
+			}						
 		}
 
 %%
