@@ -102,6 +102,7 @@ struct ocsim_var
 struct ocsim_server
 {
 	const char		*name;
+	const char		*logfile;
 	const char		*address;
 	const char		*domain;
 	const char		*realm;

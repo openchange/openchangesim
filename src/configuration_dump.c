@@ -60,6 +60,7 @@ _PUBLIC_ int configuration_dump_servers(struct ocsim_context *ctx)
 		DEBUG(0, ("\t\t generic password\t= %s\n", 
 			  el->generic_password ? el->generic_password : 
 			  "no password supplied (!!!WARNING!!!)"));
+		DEBUG(0, ("\t\t log file\t\t= %s\n", el->logfile ? el->logfile : "none"));
 		DEBUG(0, ("\t}\n\n"));
 	}
 	DEBUG(0, ("}\n"));
