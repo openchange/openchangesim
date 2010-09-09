@@ -408,11 +408,17 @@ static uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx,
 {
 	struct ocsim_scenario_case	*el;
 	struct ocsim_scenario_sendmail	*sendmail;
+	struct ocsim_log		*log;
 
+	log = openchangesim_log_init(mem_ctx);
 	for (el = cases; el; el = el->next) {
 		sendmail = (struct ocsim_scenario_sendmail *) el->private_data;
+		openchangesim_log_start(log);
 		_module_sendmail_run(mem_ctx, sendmail, session);
+		openchangesim_log_end(log, SENDMAIL_MODULE_NAME, el->name, session->profile->localaddr);
 	}
+
+	openchangesim_log_close(log);
 
 	return OCSIM_SUCCESS;
 }

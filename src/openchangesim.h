@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <syslog.h>
 
 #define	DEFAULT_PROFPATH_BASE	"%s/.openchange"
 #define	DEFAULT_PROFPATH	"%s/.openchange/openchangesim"
@@ -73,6 +74,7 @@
 /**
    Module names
  */
+#define	OPENCHANGESIM_LOGNAME	"openchangesim"
 #define	SENDMAIL_MODULE_NAME	"sendmail"
 #define	FETCHMAIL_MODULE_NAME	"fetchmail"
 
@@ -86,7 +88,6 @@ extern struct poptOption popt_openchange_version[];
 
 struct ocsim_log
 {
-	FILE			*fp;
 	struct timeval		tv_start;
 	struct timeval		tv_end;
 };
@@ -102,7 +103,6 @@ struct ocsim_var
 struct ocsim_server
 {
 	const char		*name;
-	const char		*logfile;
 	const char		*address;
 	const char		*domain;
 	const char		*realm;
@@ -193,7 +193,7 @@ struct ocsim_module
 	char				*name;		/* !< The name of the test suite */
 	char				*description;	/* !< Description of the module */
 	struct ocsim_scenario		*scenario;	/* !< The associated scenario */
-	struct ocsim_scenario_case	*cases;		/*!< execution cases for the module */
+	struct ocsim_scenario_case	*cases;		/* !< execution cases for the module */
 
 	uint32_t			(*run)(TALLOC_CTX *, struct ocsim_scenario_case *, struct mapi_session *);
 	uint32_t			(*set_ref_count)(struct ocsim_module *, int);
@@ -286,11 +286,10 @@ struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *, con
 uint32_t openchangesim_modules_run(struct ocsim_context *, char *);
 
 /* The following public definitions come from src/openchangesim_logs.c */
-struct ocsim_log *openchangesim_log_init(char *);
-uint32_t openchangesim_log_scenario_start(struct ocsim_log *);
-uint32_t openchangesim_log_scenario_end(struct ocsim_log *);
-uint32_t openchangesim_log_scenario_commit(struct ocsim_log *);
-uint32_t openchangesim_log_close(struct ocsim_log *);
+struct ocsim_log *openchangesim_log_init(TALLOC_CTX *);
+void openchangesim_log_start(struct ocsim_log *);
+void openchangesim_log_end(struct ocsim_log *, char *, char *, const char *);
+void openchangesim_log_close(struct ocsim_log *);
 
 /* The following public definitions come from src/modules/module_fetchmail.c */
 uint32_t module_fetchmail_init(struct ocsim_context *);

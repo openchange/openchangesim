@@ -89,6 +89,7 @@ bin/openchangesim:	src/version.h					\
 			src/openchangesim_interface.po			\
 			src/openchangesim_modules.po			\
 			src/openchangesim_fork.po			\
+			src/openchangesim_logs.po			\
 			src/openchangesim.po				\
 			src/modules/module_fetchmail.po			\
 			src/modules/module_sendmail.po			\

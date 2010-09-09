@@ -47,11 +47,6 @@ _PUBLIC_ int configuration_add_server(struct ocsim_context *ctx,
 
 	el = talloc_zero(ctx->mem_ctx, struct ocsim_server);
 	el->name = talloc_strdup(el, server->name);
-	if (server->logfile) {
-		el->logfile = talloc_strdup(el, server->logfile);
-	} else {
-		el->logfile = NULL;
-	}
 	el->version = server->version;
 	el->address = talloc_strdup(el, server->address);
 	el->domain = talloc_strdup(el, server->domain);

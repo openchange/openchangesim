@@ -63,7 +63,6 @@ static void unterminated(struct ocsim_context *, const char *, unsigned int);
 server			{ return kw_SERVER; }
 scenario		{ return kw_SCENARIO; }
 case			{ return kw_CASE; }
-logfile			{ return kw_LOGFILE; }
 file_utf8		{ return kw_FILE_UTF8; };
 file_html		{ return kw_FILE_HTML; };
 file_rtf		{ return kw_FILE_RTF; };

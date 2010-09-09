@@ -56,7 +56,6 @@ void	yyerror(struct ocsim_context *, void *, char *);
 %token	kw_SCENARIO
 %token	kw_CASE
 %token	kw_NAME
-%token	kw_LOGFILE
 %token	kw_VERSION
 %token	kw_ADDRESS
 %token	kw_DOMAIN
@@ -154,10 +153,6 @@ server_content	: kw_NAME EQUAL IDENTIFIER SEMICOLON
 		| kw_NAME EQUAL STRING SEMICOLON
 		{
 			ctx->server_el->name = talloc_strdup(ctx->server_el, $3);
-		}
-		| kw_LOGFILE EQUAL STRING SEMICOLON
-		{
-			ctx->server_el->logfile = talloc_strdup(ctx->server_el, $3);
 		}
 		| kw_VERSION EQUAL INTEGER SEMICOLON
 		{
