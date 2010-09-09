@@ -76,6 +76,8 @@
 #define	SENDMAIL_MODULE_NAME	"sendmail"
 #define	FETCHMAIL_MODULE_NAME	"fetchmail"
 
+#define	MAX_READ_SIZE	0x1000
+
 #define FPUTS(s, f) fprintf((f), "%s", (s))
 
 extern struct poptOption popt_openchange_version[];

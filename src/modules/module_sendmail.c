@@ -21,16 +21,10 @@
 
 #include "src/openchangesim.h"
 
-struct attach {
-	const char		*filename;
-	struct Binary_r		bin;
-	int			fd;
-};
-
 struct sendmail_data {
 	struct Binary_r		pr_html;
 	struct Binary_r		pr_rtf;
-	struct attach		attach;
+	struct Binary_r		pr_attach;
 	uint32_t		attach_num;
 };
 
@@ -65,14 +59,13 @@ static bool sdata_read_file(TALLOC_CTX *mem_ctx, const char *filename,
 		close(fd);
 		break;
 	case PR_ATTACH_DATA_BIN:
-		sdata->attach.bin.lpb = talloc_size(mem_ctx, sb.st_size);
-		sdata->attach.bin.cb = sb.st_size;
-		if ((sdata->attach.bin.lpb = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0)) == (void *) -1) {
+		sdata->pr_attach.cb = sb.st_size;
+		if ((sdata->pr_attach.lpb = mmap(NULL, sb.st_size, 
+						 PROT_READ, MAP_SHARED, fd, 0)) == (void *) -1) {
 			perror("mmap");
 			close(fd);
 			return false;
 		}
-		sdata->attach.fd = fd;
 		close(fd);
 		break;
 	default:
@@ -102,8 +95,6 @@ static const char *get_filename(const char *filename)
 /**
  * Write a stream with MAX_READ_SIZE chunks
  */
-
-#define	MAX_READ_SIZE	0x1000
 
 static bool sendmail_stream(TALLOC_CTX *mem_ctx, mapi_object_t obj_parent, 
 			    mapi_object_t obj_stream, uint32_t mapitag, 
@@ -257,7 +248,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	set_SPropValue_proptag(&lpProps[prop_index], PR_MESSAGE_FLAGS, (const void *)&msgflag);
 	prop_index++;
 
-	/* Set the message body given sendmail cae parameters */
+	/* Set the message body given sendmail case parameters */
 	if (sendmail->body_type != OCSIM_BODY_NONE) {
 		switch (sendmail->body_type) {
 		case OCSIM_BODY_UTF8_INLINE:
@@ -308,9 +299,8 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 
 			mapi_object_init(&obj_stream);
 			sendmail_stream(mem_ctx, obj_message, obj_stream, PR_HTML, 2, sdata.pr_html);
-			mapi_object_release(&obj_stream);
-
 			talloc_free(sdata.pr_html.lpb);
+			mapi_object_release(&obj_stream);
 		}
 			break;
 		case OCSIM_BODY_RTF_FILE:
@@ -325,9 +315,9 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 			}
 			mapi_object_init(&obj_stream);
 			sendmail_stream(mem_ctx, obj_message, obj_stream, PR_RTF_COMPRESSED, 2, sdata.pr_rtf);
+			talloc_free(sdata.pr_rtf.lpb);
 			mapi_object_release(&obj_stream);
 
-			talloc_free(sdata.pr_rtf.lpb);
 		}
 			break;
 		default:
@@ -385,9 +375,9 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 			}
 
 			mapi_object_init(&obj_stream);
-			sendmail_stream(mem_ctx, obj_attach, obj_stream, PR_ATTACH_DATA_BIN, 2, sdata.attach.bin);
+			sendmail_stream(mem_ctx, obj_attach, obj_stream, PR_ATTACH_DATA_BIN, 2, sdata.pr_attach);
+			munmap(sdata.pr_attach.lpb, sdata.pr_attach.cb);
 			mapi_object_release(&obj_stream);
-/* 			talloc_free(sdata.attach.bin.lpb); */
 
 			/* Save changes on attachment */
 			retval = SaveChangesAttachment(&obj_message, &obj_attach, KeepOpenReadWrite);
@@ -396,13 +386,6 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 			mapi_object_release(&obj_attach);
 		}
 	}
-
-	/* Save changes on message */
-	/* retval = SaveChangesMessage(&obj_outbox, &obj_message, KeepOpenReadOnly); */
-	/* if (retval) { */
-	/* 	mapi_errstr("SaveChangesMessage", GetLastError()); */
-	/* 	return OCSIM_ERROR; */
-	/* } */
 
 	/* Submit the message */
 	retval = SubmitMessage(&obj_message);

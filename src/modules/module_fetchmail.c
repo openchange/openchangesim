@@ -205,11 +205,19 @@ static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx,
 	mapi_object_t		obj_inbox;
 	mapi_object_t		obj_table;
 	mapi_object_t		obj_message;
+	mapi_object_t		obj_table_attach;
+	mapi_object_t		obj_attach;
+	mapi_object_t		obj_stream;
 	uint64_t		id_inbox = 0;
 	struct SPropTagArray	*SPropTagArray;
 	struct SRowSet		SRowSet;
-	uint32_t		i;
+	struct SRowSet		SRowSet_attach;
+	uint32_t		i, j;
 	uint32_t		count;
+	const uint8_t		*has_attach;
+	const uint32_t		*attach_num;
+	uint16_t		read_size;
+	unsigned char		buf[MAX_READ_SIZE];
 
 	/* Log onto the store */
 	mapi_object_init(&obj_store);
@@ -280,6 +288,58 @@ static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx,
 				aRow.lpProps = lpProps;
 
 				retval = fetchmail_get_contents(mem_ctx, &obj_message);
+
+				has_attach = (const uint8_t *) get_SPropValue_SRow_data(&aRow, PR_HASATTACH);
+				if (has_attach && *has_attach) {
+					mapi_object_init(&obj_table_attach);
+					retval = GetAttachmentTable(&obj_message, &obj_table_attach);
+					if (retval == MAPI_E_SUCCESS) {
+						SPropTagArray = set_SPropTagArray(mem_ctx, 0x1, PR_ATTACH_NUM);
+						retval = SetColumns(&obj_table_attach, SPropTagArray);
+						if (retval != MAPI_E_SUCCESS) return retval;
+						MAPIFreeBuffer(SPropTagArray);
+
+						retval = QueryRows(&obj_table_attach, 0xA, TBL_ADVANCE, &SRowSet_attach);
+						if (retval != MAPI_E_SUCCESS) return retval;
+
+						for (j = 0; j < SRowSet_attach.cRows; j++) {
+							attach_num = (const uint32_t *) find_SPropValue_data(&(SRowSet_attach.aRow[j]), PR_ATTACH_NUM);
+							mapi_object_init(&obj_attach);
+							retval = OpenAttach(&obj_message, *attach_num, &obj_attach);
+							if (retval == MAPI_E_SUCCESS) {
+								struct SPropValue	*lpProps2;
+								uint32_t		count2;
+
+								SPropTagArray = set_SPropTagArray(mem_ctx, 0x3,
+												  PR_ATTACH_FILENAME,
+												  PR_ATTACH_LONG_FILENAME,
+												  PR_ATTACH_SIZE);
+								lpProps2 = talloc_zero(mem_ctx, struct SPropValue);
+								retval = GetProps(&obj_attach, SPropTagArray, &lpProps2, &count2);
+								MAPIFreeBuffer(SPropTagArray);
+								if (retval != MAPI_E_SUCCESS) {
+									MAPIFreeBuffer(lpProps2);
+									return retval;
+								}
+								MAPIFreeBuffer(lpProps2);
+
+								mapi_object_init(&obj_stream);
+								retval = OpenStream(&obj_attach, PR_ATTACH_DATA_BIN, 0, &obj_stream);
+								if (retval != MAPI_E_SUCCESS) return retval;
+
+								read_size = 0;
+								do {
+									retval = ReadStream(&obj_stream, buf, MAX_READ_SIZE, &read_size);
+									if (retval != MAPI_E_SUCCESS) break;
+								} while (read_size);
+
+								mapi_object_release(&obj_stream);
+								mapi_object_release(&obj_attach);
+							}
+						}
+					}
+				}
+
 				MAPIFreeBuffer(lpProps);
 			}
 			mapi_object_release(&obj_message);
