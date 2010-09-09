@@ -84,6 +84,13 @@ extern struct poptOption popt_openchange_version[];
 
 #define	POPT_OPENCHANGE_VERSION { NULL, 0, POPT_ARG_INCLUDE_TABLE, popt_openchange_version, 0, "Common openchange options:", NULL },
 
+struct ocsim_log
+{
+	FILE			*fp;
+	struct timeval		tv_start;
+	struct timeval		tv_end;
+};
+
 struct ocsim_var
 {
 	const char		*name;
@@ -138,6 +145,7 @@ struct ocsim_scenario_sendmail
 
 struct ocsim_scenario_case
 {
+	char				*name;
 	void				*private_data;
 	struct ocsim_scenario_case	*prev;
 	struct ocsim_scenario_case	*next;
@@ -160,6 +168,7 @@ struct ocsim_scenario
  */
 struct ocsim_generic_scenario_case
 {
+	const char				*name;
 	enum ocsim_scenario_body_type		body_type;
 	char					*body_file;
 	char					*body_inline;
@@ -274,6 +283,13 @@ uint32_t module_set_ref_count(struct ocsim_module *, int);
 struct ocsim_scenario *module_get_scenario(struct ocsim_context *, const char *);
 struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *, const char *);
 uint32_t openchangesim_modules_run(struct ocsim_context *, char *);
+
+/* The following public definitions come from src/openchangesim_logs.c */
+struct ocsim_log *openchangesim_log_init(char *);
+uint32_t openchangesim_log_scenario_start(struct ocsim_log *);
+uint32_t openchangesim_log_scenario_end(struct ocsim_log *);
+uint32_t openchangesim_log_scenario_commit(struct ocsim_log *);
+uint32_t openchangesim_log_close(struct ocsim_log *);
 
 /* The following public definitions come from src/modules/module_fetchmail.c */
 uint32_t module_fetchmail_init(struct ocsim_context *);

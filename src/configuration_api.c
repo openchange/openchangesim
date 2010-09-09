@@ -88,7 +88,7 @@ _PUBLIC_ int configuration_add_scenario(struct ocsim_context *ctx,
 					struct ocsim_generic_scenario *gscenario)
 {
 	struct ocsim_scenario	*el;
-	int			i;
+	int			i, j;
 
 	/* Sanity checks */
 	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
@@ -116,7 +116,7 @@ _PUBLIC_ int configuration_add_scenario(struct ocsim_context *ctx,
 		el->name = talloc_strdup(el, gscenario->name);
 		el->repeat = gscenario->repeat;
 
-		for (elm = gscenario->case_el; elm; elm = elm->next) {
+		for (elm = gscenario->case_el, j = 0; elm; elm = elm->next, j++) {
 			element = talloc_zero(el, struct ocsim_scenario_case);
 			sendmail = talloc_zero(element, struct ocsim_scenario_sendmail);
 			
@@ -140,6 +140,11 @@ _PUBLIC_ int configuration_add_scenario(struct ocsim_context *ctx,
 			sendmail->attachments = talloc_array(sendmail, char *, sendmail->attachment_count + 2);
 			for (i = 0; i < sendmail->attachment_count; i++) {
 				sendmail->attachments[i] = talloc_strdup(sendmail->attachments, elm->attachments[i]);
+			}
+			if (elm->name) {
+				element->name = talloc_strdup(element, elm->name);
+			}  else {
+				element->name = talloc_asprintf(element, "scenario case %d", j);
 			}
 			element->private_data = (void *) sendmail;
 			DLIST_ADD_END(el->cases, element, struct ocsim_scenario_case);
@@ -167,6 +172,11 @@ _PUBLIC_ int configuration_add_generic_scenario_case(struct ocsim_generic_scenar
 	int					i;
 
 	el = talloc_zero(gscenario, struct ocsim_generic_scenario_case);
+	if (gcase->name) {
+		el->name = talloc_strdup(el, gcase->name);
+	} else {
+		el->name = NULL;
+	}
 	el->body_type = gcase->body_type;
 
 	switch (el->body_type) {

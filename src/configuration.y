@@ -261,7 +261,16 @@ scenario_case	: kw_CASE OBRACE scases EBRACE SEMICOLON
 
 scases:		| scases scase		
 
-scase		: kw_ATTACHMENT EQUAL STRING SEMICOLON
+scase		: kw_NAME EQUAL STRING SEMICOLON
+		{
+			if (!ctx->case_el->name) {
+				ctx->case_el->name = talloc_strdup(ctx->case_el, $3);
+			} else {
+				printf("%s: %d\n", "name already specified for this case", ctx->lineno);
+				exit (1);
+			}
+		}
+		| kw_ATTACHMENT EQUAL STRING SEMICOLON
 		{
 		  ctx->case_el->attachments = talloc_realloc(ctx->case_el, ctx->case_el->attachments, char *,
 							     ctx->case_el->attachment_count + 2);

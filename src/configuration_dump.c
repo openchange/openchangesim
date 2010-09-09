@@ -108,7 +108,6 @@ _PUBLIC_ int configuration_dump_scenarios(struct ocsim_context *ctx)
 	struct ocsim_scenario_case	*elc;
 	struct ocsim_scenario_sendmail	*sendmail;
 	int				i;
-	int				j;
 
 	/* Sanity checks */
 	OCSIM_RETVAL_IF(!ctx, OCSIM_ERROR, OCSIM_NOT_INITIALIZED, NULL);
@@ -117,8 +116,8 @@ _PUBLIC_ int configuration_dump_scenarios(struct ocsim_context *ctx)
 	for (el = ctx->scenarios; el->next; el = el->next) {
 		DEBUG(0, ("scenario %s {\n", el->name));
 		DEBUG(0, ("\t repeat\t\t= %d\n\n", el->repeat));
-		for (elc = el->cases, i = 0; elc; elc = elc->next, i++) {
-			DEBUG(0, ("\t scenario case %d {\n", i));
+		for (elc = el->cases; elc; elc = elc->next) {
+			DEBUG(0, ("\t case \"%s\" {\n", elc->name));
 			if (!strcasecmp(el->name, SENDMAIL_MODULE_NAME)) {
 				sendmail = (struct ocsim_scenario_sendmail *) elc->private_data;
 				switch (sendmail->body_type) {
@@ -147,8 +146,8 @@ _PUBLIC_ int configuration_dump_scenarios(struct ocsim_context *ctx)
 					break;
 				}
 				DEBUG(0, ("\t\t attachments\t\t= %d\n", sendmail->attachment_count));
-				for (j = 0; j < sendmail->attachment_count; j++) {
-					DEBUG(0, ("\t\t attachment\t\t= %s\n", sendmail->attachments[j]));
+				for (i = 0; i < sendmail->attachment_count; i++) {
+					DEBUG(0, ("\t\t attachment\t\t= %s\n", sendmail->attachments[i]));
 				}
 			}
 			DEBUG(0, ("\t };\n\n"));
