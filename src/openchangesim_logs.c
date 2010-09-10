@@ -68,8 +68,13 @@ void openchangesim_log_end(struct ocsim_log *log,
 		usec = log->tv_end.tv_usec - log->tv_start.tv_usec;
 	}
 
-	syslog(LOG_INFO, "%s: %s \"%s\": %ld seconds %ld microseconds", scenario, clientIP, 
-	       case_name, (long int) sec, (long int) usec);
+	if (case_name) {
+		syslog(LOG_INFO, "%s: %s \"%s\": %ld seconds %ld microseconds", scenario, clientIP, 
+		       case_name, (long int) sec, (long int) usec);
+	} else {
+		syslog(LOG_INFO, "%s: %s: %ld seconds %ld microseconds", scenario, clientIP,
+		       (long int) sec, (long int) usec);
+	}
 
 	memset(&log->tv_start, 0, sizeof (struct timeval));
 	memset(&log->tv_end, 0, sizeof (struct timeval));
@@ -83,4 +88,22 @@ void openchangesim_log_close(struct ocsim_log *log)
 	closelog();
 
 	return;
+}
+
+
+void openchangesim_log_string(const char *fmt, ...)
+{
+	va_list	ap;
+	char	*s = NULL;
+	int	ret;
+
+	va_start(ap, fmt);
+	ret = vasprintf(&s, fmt, ap);
+	va_end(ap);
+	
+	openlog(OPENCHANGESIM_LOGNAME, LOG_PID, LOG_USER);
+	syslog(LOG_INFO, "%s", s);
+	closelog();
+
+	free(s);
 }

@@ -196,9 +196,8 @@ static enum MAPISTATUS fetchmail_get_contents(TALLOC_CTX *mem_ctx,
 	return MAPI_E_SUCCESS;
 }
 
-static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, 
-				     struct ocsim_scenario_case *scase,
-				     struct mapi_session *session)
+static uint32_t _module_fetchmail_run(TALLOC_CTX *mem_ctx, 
+				      struct mapi_session *session)
 {
 	enum MAPISTATUS		retval;
 	mapi_object_t		obj_store;
@@ -350,6 +349,21 @@ static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx,
 
 	/* talloc_free(mem_ctx); */
 	mapi_object_release(&obj_store);
+
+	return OCSIM_SUCCESS;
+}
+
+static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx, 
+				     struct ocsim_scenario_case *cases, 
+				     struct mapi_session *session)
+{
+	struct ocsim_log		*log;
+
+	log = openchangesim_log_init(mem_ctx);
+	openchangesim_log_start(log);
+	_module_fetchmail_run(mem_ctx, session);
+	openchangesim_log_end(log, FETCHMAIL_MODULE_NAME, NULL, session->profile->localaddr);
+	openchangesim_log_close(log);
 
 	return OCSIM_SUCCESS;
 }

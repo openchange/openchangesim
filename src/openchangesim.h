@@ -290,6 +290,7 @@ struct ocsim_log *openchangesim_log_init(TALLOC_CTX *);
 void openchangesim_log_start(struct ocsim_log *);
 void openchangesim_log_end(struct ocsim_log *, char *, char *, const char *);
 void openchangesim_log_close(struct ocsim_log *);
+void openchangesim_log_string(const char *, ...);
 
 /* The following public definitions come from src/modules/module_fetchmail.c */
 uint32_t module_fetchmail_init(struct ocsim_context *);
