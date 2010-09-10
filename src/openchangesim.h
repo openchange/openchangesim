@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <syslog.h>
+#include <signal.h>
 
 #define	DEFAULT_PROFPATH_BASE	"%s/.openchange"
 #define	DEFAULT_PROFPATH	"%s/.openchange/openchangesim"

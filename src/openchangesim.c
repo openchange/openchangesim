@@ -306,6 +306,12 @@ static int check_range_status(struct ocsim_context *ctx, const char *server)
 	return -1;
 }
 
+static void signal_kill_openchangesim(void)
+{
+	(void) signal(SIGINT, SIG_DFL);
+	exit (1);
+}
+
 int main(int argc, const char *argv[])
 {
 	TALLOC_CTX		*mem_ctx;
@@ -423,6 +429,15 @@ int main(int argc, const char *argv[])
 		openchangesim_release(ctx);
 		exit (0);
 	}
+
+	/* catch CTRL-C */
+#if defined (__FreeBSD__)
+	(void) signal(SIGINT, (sig_t) signal_kill_openchangesim);
+#elif defined (__SunOS)
+        (void) signal(SIGINT, signal_kill_openchangesim);
+#else
+	(void) signal(SIGINT, (sighandler_t) signal_kill_openchangesim);
+#endif
 
 	/* Step 2. Sanity check on options */
 	if (!opt_profdb) {
