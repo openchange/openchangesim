@@ -199,6 +199,7 @@ int openchangesim_delete_interfaces(struct ocsim_context *ctx,
 	}
 	logstr = talloc_asprintf(ctx->mem_ctx, "[*] All %d virtual interfaces pending physical deletion\n",
 				 el->ip_used+1);
+	talloc_free(el->interfaces_fd);
 	openchangesim_printlog(f, logstr);
 	talloc_free(logstr);
 	printf("\n");
