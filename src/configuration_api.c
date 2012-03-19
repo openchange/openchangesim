@@ -279,9 +279,16 @@ uint32_t configuration_get_ip_count(uint8_t *start, uint8_t *end)
 	diff = end[2] - start[2];
 	if (diff) {
 		/* This is a class B */
-		count = 254 * (diff + 1);
-		count -= 254 - start[3];
-		count -= end[3] + 1;
+		count = 256 * (diff + 1);
+		/* value range from 0 to 255
+		 * we counted already a full range
+		 * we have to remove the start value and
+		 * what is left from the end value to 255.
+		 * For instance if start[3] == 0 and end[3] == 255
+		 * we have to remove 0 address we have x set of 256 addresses
+		 */
+		count -= start[3];
+		count -= 255 - end[3];
 		
 		return count;
 	}
