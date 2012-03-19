@@ -260,7 +260,7 @@ struct ocsim_server *configuration_validate_server(struct ocsim_context *, const
 struct ocsim_scenario *configuration_validate_scenario(struct ocsim_context *, const char *);
 
 /* The following public definitions come from src/openchangesim.c */
-void openchangesim_printlog(FILE *, char *);
+void openchangesim_printlog(FILE *, const char *);
 int openchangesim_profile(struct mapi_context *, struct ocsim_context *, const char *);
 enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *, TALLOC_CTX *, char *, struct ocsim_server *);
 enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *, TALLOC_CTX *, struct ocsim_server *, char *, const char *);

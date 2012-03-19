@@ -21,7 +21,7 @@
 
 #include "src/openchangesim.h"
 
-void openchangesim_printlog(FILE *logfp, char *s)
+void openchangesim_printlog(FILE *logfp, const char *s)
 {
 	FPUTS("\r", logfp);
 	FPUTS(s, logfp);
