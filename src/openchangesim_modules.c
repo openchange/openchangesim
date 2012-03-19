@@ -185,12 +185,12 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_contex
 
 	do {
 		for (el = ctx->modules; el; el = el->next) {
-			retval = MapiLogonEx(mapi_ctx, &session, profname, NULL);
-			if (retval) {
-				openchangesim_log_string("Opening session for %s failed", profname);
-				return OCSIM_ERROR;
-			}
 			if (el->get_ref_count(el) > 0) {
+				retval = MapiLogonEx(mapi_ctx, &session, profname, NULL);
+				if (retval) {
+					openchangesim_log_string("Opening session for %s failed", profname);
+					return OCSIM_ERROR;
+				}
 				el->run(ctx, el->cases, session);
 				el->set_ref_count(el, -1);
 			}
@@ -204,6 +204,7 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_contex
 	}
 
 	module_cleanup_run(ctx, session);
+	talloc_free(session);
 	talloc_free(mem_ctx);
 
 	return OCSIM_SUCCESS;
