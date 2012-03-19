@@ -170,7 +170,7 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 	lcid = mapi_get_lcid_from_locale(locale);
 	
 	cpid_str = talloc_asprintf(mem_ctx, "%d", cpid);
-	lcid_str = talloc_asprintf(mem_ctx, "0x%.4x", lcid);
+	lcid_str = talloc_asprintf(mem_ctx, "%d", lcid);
 	
 	mapi_profile_add_string_attr(mapi_ctx, profname, "codepage", cpid_str);
 	mapi_profile_add_string_attr(mapi_ctx, profname, "language", lcid_str);
