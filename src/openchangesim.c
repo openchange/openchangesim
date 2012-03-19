@@ -251,7 +251,7 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 	enum MAPISTATUS		retval;
 	struct ocsim_server	*el;
 	char			*profname;
-	struct mapi_profile	profile;
+	struct mapi_profile	*profile;
 	char			*ip_address;
 	char			*username;
 
@@ -263,12 +263,13 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 	el = configuration_validate_server(ctx, server);
 	OCSIM_RETVAL_IF(!el, OCSIM_ERROR, OCSIM_INVALID_SERVER, NULL);
 
+	profile = talloc(mapi_ctx->mem_ctx, struct mapi_profile);
 	/* Check if profiles already exist */
 	switch (el->range) {
 	case false:
 		profname = talloc_asprintf(ctx->mem_ctx, PROFNAME_TEMPLATE, 
 					   el->name, el->generic_user, el->realm);
-		retval = OpenProfile(mapi_ctx, &profile, profname, NULL);
+		retval = OpenProfile(mapi_ctx, profile, profname, NULL);
 		if (retval != MAPI_E_SUCCESS) {
 			if (el->range_start > 0) {
 				username = talloc_asprintf(ctx->mem_ctx, PROFNAME_USER, 
@@ -289,7 +290,7 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 					     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
 		profname = talloc_asprintf(ctx->mem_ctx, PROFNAME_TEMPLATE_NB, el->name,
 					   el->generic_user, el->range_start, el->realm);
-		retval = OpenProfile(mapi_ctx, &profile, profname, NULL);
+		retval = OpenProfile(mapi_ctx, profile, profname, NULL);
 		if (retval != MAPI_E_SUCCESS) {
 			username = talloc_asprintf(ctx->mem_ctx, PROFNAME_USER,
 						   el->generic_user, el->range_start);
@@ -309,6 +310,7 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 		talloc_free(profname);
 		break;
 	}
+	talloc_free(profile);
 
 	return OCSIM_SUCCESS;
 }
