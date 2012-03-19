@@ -276,6 +276,7 @@ uint32_t callback(struct SRowSet *, void *);
 
 /* The following public definitions come from src/openchangesim_interface.c */
 void openchangesim_interface_get_next_ip(struct ocsim_server *, bool);
+void openchangesim_release_ip(struct ocsim_server *);
 int openchangesim_create_interface_tap(TALLOC_CTX *, int *, const char *);
 int openchangesim_delete_interface_tap(TALLOC_CTX *, int);
 int openchangesim_delete_interfaces(struct ocsim_context *, const char *);

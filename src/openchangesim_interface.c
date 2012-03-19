@@ -67,6 +67,14 @@ void openchangesim_interface_get_next_ip(struct ocsim_server *el, bool status)
 }
 
 /**
+   \Release the last affected IP address.
+
+ */
+void openchangesim_release_ip(struct ocsim_server *el) {
+	el->ip_used -= 1;
+}
+
+/**
    \details Create a virtual tap interface and assign an IPv4 IP
    address
 

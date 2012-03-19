@@ -94,6 +94,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 			username_dst = talloc_asprintf(mem_ctx, PROFNAME_USER, el->generic_user, i);
 			retval = DuplicateProfile(mapi_ctx, profname_src, profname_dst, username_dst);
 			if (retval) {
+				openchangesim_release_ip(el);
 				talloc_free(profname_dst);
 				talloc_free(username_dst);
 				return retval;
