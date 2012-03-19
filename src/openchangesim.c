@@ -539,6 +539,7 @@ int main(int argc, const char *argv[])
 		goto end;
 	}
 
+end:
 	/* Last OpenChangeSim Step: Delete virtual interfaces */
 	ret = openchangesim_delete_interfaces(ctx, opt_server);
 	if (ret == OCSIM_ERROR) {
@@ -547,7 +548,6 @@ int main(int argc, const char *argv[])
 	}
 
 	/* Uninitialize MAPI subsystem */
-end:
 	poptFreeContext(pc);
 	MAPIUninitialize(mapi_ctx);
 	talloc_free(mem_ctx);
