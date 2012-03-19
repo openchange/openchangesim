@@ -1,0 +1,26 @@
+{
+   <ioctl_setowner_nullpointer>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:openchangesim_profile
+   fun:main
+}
+
+{
+   <ioctl_setowner_nullpointer>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:openchangesim_DuplicateProfile
+   fun:openchangesim_profile
+   fun:main
+}
+{
+   <ioctl_set_non_persistant_nullpointer>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:openchangesim_delete_interfaces
+   fun:main
+}
