@@ -172,7 +172,7 @@ struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *ctx, 
 uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, char *profname)
 {
 	TALLOC_CTX		*mem_ctx;
-	struct mapi_session	session;
+	struct mapi_session	*session;
 	struct ocsim_module	*el = NULL;
 	enum MAPISTATUS 	retval;
 
