@@ -69,7 +69,6 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 	char			*profname_dst;
 	char			*username_dst;
 	enum MAPISTATUS		retval;
-	struct mapi_profile	profile;
 	uint32_t		profile_nb = el->range_end - el->range_start;
 	char			*logstr;
 	char			*ip_address;
@@ -83,12 +82,14 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 	/* First IP of the range has been alocated to the "reference profile"*/
 	for (i = el->range_start + 1; i != el->range_end; i++) {
 		int idx;
+		struct mapi_profile	*profile;
 		openchangesim_interface_get_next_ip(el, false);
 
 		profname_dst = talloc_asprintf(mem_ctx, PROFNAME_TEMPLATE_NB,
 					       el->name, el->generic_user, i, el->realm);
 
-		retval = OpenProfile(mapi_ctx, &profile, profname_dst, NULL);
+		profile = talloc(mem_ctx, struct mapi_profile);
+		retval = OpenProfile(mapi_ctx, profile, profname_dst, NULL);
 		if (retval != MAPI_E_SUCCESS) {
 			username_dst = talloc_asprintf(mem_ctx, PROFNAME_USER, el->generic_user, i);
 			retval = DuplicateProfile(mapi_ctx, profname_src, profname_dst, username_dst);
@@ -121,6 +122,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 		openchangesim_printlog(f, logstr);
 		talloc_free(logstr);
 		talloc_free(profname_dst);
+		talloc_free(profile);
 	}
 
 	logstr = talloc_asprintf(mem_ctx, "[*] %d User profiles ready %200s\n", profile_nb, "");
