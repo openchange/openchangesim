@@ -118,6 +118,7 @@ struct ocsim_server
 	uint8_t			ip_current[4];
 	uint32_t		ip_number;
 	uint32_t		ip_used;
+	int				*interfaces_fd;
 	
 	struct ocsim_var	*vars;
 	struct ocsim_server	*prev;
@@ -267,8 +268,8 @@ uint32_t callback(struct SRowSet *, void *);
 
 /* The following public definitions come from src/openchangesim_interface.c */
 void openchangesim_interface_get_next_ip(struct ocsim_server *, bool);
-int openchangesim_create_interface_tap(TALLOC_CTX *, uint32_t, char *);
-int openchangesim_delete_interface_tap(TALLOC_CTX *, uint32_t);
+int openchangesim_create_interface_tap(TALLOC_CTX *, int *, const char *);
+int openchangesim_delete_interface_tap(TALLOC_CTX *, int);
 int openchangesim_delete_interfaces(struct ocsim_context *, const char *);
 
 /* The following public definitions come from src/openchangesim_fork.c */

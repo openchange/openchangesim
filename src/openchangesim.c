@@ -74,7 +74,9 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 
 	f = fdopen(STDOUT_FILENO, "r+");
 
+	/* First IP of the range has been alocated to the "reference profile"*/
 	for (i = el->range_start + 1; i != el->range_end; i++) {
+		int idx;
 		openchangesim_interface_get_next_ip(el, false);
 
 		profname_dst = talloc_asprintf(mem_ctx, PROFNAME_TEMPLATE_NB,
@@ -92,14 +94,22 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 			ip_address = talloc_asprintf(mem_ctx, "%d.%d.%d.%d", el->ip_current[0], 
 						     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
 			mapi_profile_modify_string_attr(mapi_ctx, profname_dst, "localaddress", ip_address);
-			if (openchangesim_create_interface_tap(mem_ctx, el->ip_used + 1, ip_address) < 0) {
+			idx = i - el->range_start;
+			if (openchangesim_create_interface_tap(mem_ctx, &el->interfaces_fd[idx], ip_address) < 0) {
 				exit (1);
 			}
-			talloc_free(ip_address);
 			talloc_free(username_dst);
+		} else {
+			idx = i - el->range_start;
+			ip_address = talloc_asprintf(mem_ctx, "%d.%d.%d.%d", el->ip_current[0],
+						     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
+			if (openchangesim_create_interface_tap(mem_ctx, &el->interfaces_fd[idx], ip_address) < 0) {
+				exit (1);
+			}
 		}
+		talloc_free(ip_address);
 
-		logstr = talloc_asprintf(mem_ctx, "[*] Creating profile %d/%d: %d.%d.%d.%d %s", 
+		logstr = talloc_asprintf(mem_ctx, "[*] Creating profile %d/%d: %d.%d.%d.%d %s\n",
 					 i, profile_nb, el->ip_current[0], el->ip_current[1], 
 					 el->ip_current[2], el->ip_current[3], profname_dst);
 		openchangesim_printlog(f, logstr);
@@ -107,10 +117,9 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 		talloc_free(profname_dst);
 	}
 
-	logstr = talloc_asprintf(mem_ctx, "[*] %d User profiles ready %200s", profile_nb, "");
+	logstr = talloc_asprintf(mem_ctx, "[*] %d User profiles ready %200s\n", profile_nb, "");
 	openchangesim_printlog(f, logstr);
 	talloc_free(logstr);
-	printf("\n");
 
 	return MAPI_E_SUCCESS;
 }
@@ -141,6 +150,7 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 	char			*cpid_str;
 	char			*lcid_str;
 	char			hostname[256];
+	char			*str;
 	const char		*workstation = NULL;
 
 	retval = CreateProfile(mapi_ctx, profname, username, el->generic_password, 0);
@@ -182,7 +192,7 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 	retval = MapiLogonProvider(mapi_ctx, &session, profname, el->generic_password, PROVIDER_ID_NSPI);
 	if (retval != MAPI_E_SUCCESS) {
 		mapi_errstr("MapiLogonProvider", GetLastError());
-		printf("Deleting profile\n");
+		openchangesim_printlog(stdout, "Deleting profile\n");
 		if ((retval = DeleteProfile(mapi_ctx, profname)) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
 		}
@@ -193,14 +203,15 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 				       username);
 	if (retval != MAPI_E_SUCCESS && retval != 0x1) {
 		mapi_errstr("ProcessNetworkProfile", GetLastError());
-		printf("Deleting profile\n");
+		openchangesim_printlog(stdout, "Deleting profile\n");
 		if ((retval = DeleteProfile(mapi_ctx, profname)) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
 		}
 		return retval;
 	}
-
-	printf("[*] Reference profile %s completed and added to database\n", profname);
+	str =  talloc_asprintf(mem_ctx, "[*] Reference profile %s completed and added to database\n", profname);
+	openchangesim_printlog(stdout, str);
+	talloc_free(str);
 
 	return MAPI_E_SUCCESS;
 }
@@ -251,6 +262,7 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 		break;
 	case true:
 		/* Create first profile */
+		el->interfaces_fd = talloc_zero_array(ctx->mem_ctx, int, el->range_end - (el->range_start));
 		openchangesim_interface_get_next_ip(el, true);
 		ip_address = talloc_asprintf(ctx->mem_ctx, "%d.%d.%d.%d", el->ip_current[0],
 					     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
@@ -266,7 +278,7 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 			if (retval) return OCSIM_ERROR;
 			mapi_profile_add_string_attr(mapi_ctx, profname, "localaddress", ip_address);
 		}
-		if (openchangesim_create_interface_tap(ctx->mem_ctx, el->ip_used, ip_address) < 0) {
+		if (openchangesim_create_interface_tap(ctx->mem_ctx, &el->interfaces_fd[el->ip_used], ip_address) < 0) {
 			exit (1);
 		}
 		talloc_free(ip_address);
@@ -328,6 +340,7 @@ int main(int argc, const char *argv[])
 	const char		*opt_debug = NULL;
 	const char		*opt_conf_file = NULL;
 	const char		*opt_server = NULL;
+	char			*str;
 	struct mapi_context	*mapi_ctx = NULL;
 
 	enum { OPT_PROFILE_DB=1000, OPT_DEBUG, OPT_DUMPDATA, OPT_VERSION,
@@ -364,7 +377,9 @@ int main(int argc, const char *argv[])
 			opt_dumpdata = true;
 			break;
 		case OPT_VERSION:
-			printf("Version %s\n", OPENCHANGESIM_VERSION_STRING);
+			str = talloc_asprintf(mem_ctx, "Version %s\n", OPENCHANGESIM_VERSION_STRING);
+			openchangesim_printlog(stdout, str);
+			talloc_free(str);
 			exit (0);
 		case OPT_CONFIG:
 			opt_conf_file = poptGetOptArg(pc);

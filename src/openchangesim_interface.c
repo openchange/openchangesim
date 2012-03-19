@@ -77,25 +77,24 @@ void openchangesim_interface_get_next_ip(struct ocsim_server *el, bool status)
    \return 0 on success, otherwise -1
  */
 int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx, 
-				       uint32_t tap_number, 
-				       char *ip_addr)
+				       int * _tap_fd,
+				       const char *ip_addr)
 {
 	struct ifreq		ifr;
 	struct addrinfo		*result = NULL;
-	char			*tap = NULL;
+	char			*tap = "";
+	char			*name;
 	char			*file = "/dev/net/tun";
 	uid_t			owner = -1;
 	int			tap_fd;
 	int			s;
+	*_tap_fd = -1;
 
 	if ((tap_fd = open(file, O_RDWR)) < 0) {
 		fprintf(stderr, "Failed to open '%s' : ", file);
 		perror("");
 		return -1;
 	}
-
-	tap = talloc_asprintf(mem_ctx, "tap%d", tap_number);
-	memset(&ifr, 0, sizeof (ifr));
 
 	memset(&ifr.ifr_addr, 0, sizeof (ifr.ifr_addr));
 	ifr.ifr_addr.sa_family = AF_INET;
@@ -107,6 +106,7 @@ int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx,
 		perror("TUNSETIFF");
 		return -1;
 	}
+	name = talloc_strdup(mem_ctx, ifr.ifr_name);
 
 	owner = geteuid();
 	if (owner != -1) {
@@ -122,7 +122,7 @@ int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx,
 	}
 
 	memset(&ifr, 0, sizeof (ifr));
-	strncpy(ifr.ifr_name, tap, sizeof (ifr.ifr_name));
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	getaddrinfo(ip_addr, "0", NULL, &result);
 	ifr.ifr_addr.sa_family = result->ai_addr->sa_family;
 	memcpy(ifr.ifr_addr.sa_data, result->ai_addr->sa_data, sizeof (ifr.ifr_addr.sa_data));
@@ -135,12 +135,13 @@ int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx,
 		DEBUG(0, ("Deleting interface"));
 		if (ioctl(tap_fd, TUNSETPERSIST, 0) < 0) {
 		  perror("TUNSETPERSIST");
-		  return -1;
+		  return OCSIM_ERROR;
 		}
-		return -1;
+		return OCSIM_ERROR;
 	}
 
-	return 0;
+	*_tap_fd = tap_fd;
+	return OCSIM_SUCCESS;
 }
 
 
@@ -153,32 +154,14 @@ int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx,
    \return 0 on success, otherwise -1
  */
 int openchangesim_delete_interface_tap(TALLOC_CTX *mem_ctx,
-				       uint32_t tap_number)
+				       int tap_fd)
 {
-	struct ifreq	ifr;
-	char		*file = "/dev/net/tun";
-	int		tap_fd;
-	char		*tap;
-
-	if ((tap_fd = open(file, O_RDWR)) < 0) {
-		fprintf(stderr, "Failed to open '%s' : ", file);
-		perror("");
-		return OCSIM_ERROR;
-	}
-
-	memset(&ifr, 0, sizeof (ifr));
-	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-	tap = talloc_asprintf(mem_ctx, "tap%d", tap_number);
-	strncpy(ifr.ifr_name, tap, sizeof (ifr.ifr_name) - 1);
-	if (ioctl(tap_fd, TUNSETIFF, (void *) &ifr) < 0) {
-		talloc_free(tap);
-		perror("TUNSETIFF");
-		return OCSIM_ERROR;
+	if (tap_fd == 0) {
+		return OCSIM_SUCCESS;
 	}
 
 	if (ioctl(tap_fd, TUNSETPERSIST, 0) < 0) {
 		perror("TUNSETPERSIST");
-		talloc_free(tap);
 		return OCSIM_ERROR;
 	}
 	
@@ -199,14 +182,16 @@ int openchangesim_delete_interfaces(struct ocsim_context *ctx,
 
 	f = fdopen(STDOUT_FILENO, "r+");
 
-	for (i = el->ip_used; i >= 0; i--) {		
-		ret = openchangesim_delete_interface_tap(ctx->mem_ctx, i);
-		logstr = talloc_asprintf(ctx->mem_ctx, "[*] Interface tap%d deleted", i);
+	for (i = 0; i <= el->ip_used; i++) {
+		ret = openchangesim_delete_interface_tap(ctx->mem_ctx, el->interfaces_fd[i]);
+		logstr = talloc_asprintf(ctx->mem_ctx,
+				"[*] Interface %d (fd %d) deleted\n",
+				i, el->interfaces_fd[i]);
 		openchangesim_printlog(f, logstr);
 		talloc_free(logstr);
 	}
-	logstr = talloc_asprintf(ctx->mem_ctx, "[*] All %d virtual interfaces pending physical deletion", 
-				 el->ip_used);
+	logstr = talloc_asprintf(ctx->mem_ctx, "[*] All %d virtual interfaces pending physical deletion\n",
+				 el->ip_used+1);
 	openchangesim_printlog(f, logstr);
 	talloc_free(logstr);
 	printf("\n");
