@@ -278,7 +278,7 @@ static uint32_t _module_fetchmail_run(TALLOC_CTX *mem_ctx,
 				retval = GetProps(&obj_message, SPropTagArray, &lpProps, &count);
 				MAPIFreeBuffer(SPropTagArray);
 				if (retval) {
-					mapi_errstr("GetProps", GetLastError());		
+					mapi_errstr("GetProps", GetLastError());
 					return OCSIM_ERROR;
 				}
 
