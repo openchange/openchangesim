@@ -191,7 +191,13 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 
 	retval = MapiLogonProvider(mapi_ctx, &session, profname, el->generic_password, PROVIDER_ID_NSPI);
 	if (retval != MAPI_E_SUCCESS) {
+		char * msg;
+
 		mapi_errstr("MapiLogonProvider", GetLastError());
+		msg = talloc_asprintf(mapi_ctx, "MapiLogonProvider returned %s\n",
+					mapi_get_errstr(GetLastError()));
+		openchangesim_printlog(stdout, msg);
+		talloc_free(msg);
 		openchangesim_printlog(stdout, "Deleting profile\n");
 		if (DeleteProfile(mapi_ctx, profname) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
@@ -202,7 +208,13 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 	retval = ProcessNetworkProfile(session, username, (mapi_profile_callback_t) callback, 
 				       username);
 	if (retval != MAPI_E_SUCCESS && retval != 0x1) {
+		char * msg;
+
 		mapi_errstr("ProcessNetworkProfile", GetLastError());
+		msg = talloc_asprintf(mapi_ctx, "ProcessNetworkProfile returned %s\n",
+					mapi_get_errstr(GetLastError()));
+		openchangesim_printlog(stdout, msg);
+		talloc_free(msg);
 		openchangesim_printlog(stdout, "Deleting profile\n");
 		if (DeleteProfile(mapi_ctx, profname) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
