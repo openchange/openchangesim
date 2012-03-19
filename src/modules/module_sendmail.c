@@ -152,7 +152,6 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	mapi_object_t		obj_stream;
 	struct SPropTagArray	*SPropTagArray;
 	struct SRowSet		*SRowSet = NULL;
-	struct SPropTagArray   	*flaglist = NULL;
 	struct SPropValue	SPropValue;
 	struct SPropValue	lpProps[4];
 	const char	       	*username[2];
@@ -164,6 +163,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	bool			bret;
 	int			prop_index = 0;
 	int			i;
+	struct PropertyTagArray_r	*flaglist = NULL;
 	
 	/* Log onto the store */
 	mapi_object_init(&obj_store);
@@ -212,7 +212,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	username[1] = NULL;
 
 	SRowSet = talloc_zero(mem_ctx, struct SRowSet);
-	flaglist = talloc_zero(mem_ctx, struct SPropTagArray);
+	flaglist = talloc_zero(mem_ctx, struct PropertyTagArray_r);
 
 	retval = ResolveNames(mapi_object_get_session(&obj_message), username, SPropTagArray, 
 			      &SRowSet, &flaglist, MAPI_UNICODE);
