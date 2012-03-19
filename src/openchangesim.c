@@ -72,7 +72,11 @@ enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TA
 	char			*logstr;
 	char			*ip_address;
 
-	f = fdopen(STDOUT_FILENO, "r+");
+	f = fdopen(STDOUT_FILENO, "a");
+	if (!f) {
+		fprintf(stderr, "Open of stdout failed, errno = %d\n", errno);
+		exit(1);
+	}
 
 	/* First IP of the range has been alocated to the "reference profile"*/
 	for (i = el->range_start + 1; i != el->range_end; i++) {
