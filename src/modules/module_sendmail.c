@@ -413,19 +413,23 @@ static uint32_t module_sendmail_run(TALLOC_CTX *mem_ctx,
 	struct ocsim_scenario_case	*el;
 	struct ocsim_scenario_sendmail	*sendmail;
 	struct ocsim_log		*log;
+	TALLOC_CTX *sub_ctx;
 	char				*addr;
 
-	log = openchangesim_log_init(mem_ctx);
+	sub_ctx = talloc_new(mem_ctx);
+
+	log = openchangesim_log_init(sub_ctx);
 	for (el = cases; el; el = el->next) {
 		sendmail = (struct ocsim_scenario_sendmail *) el->private_data;
 		openchangesim_log_start(log);
-		addr = talloc_strdup(mem_ctx, session->profile->localaddr);
-		_module_sendmail_run(mem_ctx, sendmail, session, el->next == NULL);
+		addr = talloc_strdup(sub_ctx, session->profile->localaddr);
+		_module_sendmail_run(sub_ctx, sendmail, session, el->next == NULL);
 		openchangesim_log_end(log, SENDMAIL_MODULE_NAME, el->name, addr);
 		talloc_free(addr);
 	}
 
 	openchangesim_log_close(log);
+	talloc_free(sub_ctx);
 
 	return OCSIM_SUCCESS;
 }
