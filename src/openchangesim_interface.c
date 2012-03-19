@@ -94,16 +94,15 @@ int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx,
 	char			*name;
 	char			*file = "/dev/net/tun";
 	uid_t			owner = -1;
-	int			tap_fd;
+	int			tap_fd = -1;
 	int			s;
 	*_tap_fd = -1;
 
 	if ((tap_fd = open(file, O_RDWR)) < 0) {
-		fprintf(stderr, "Failed to open '%s' : ", file);
+		fprintf(stderr, "Failed to open '%s'\n", file);
 		perror("");
 		return -1;
 	}
-
 	memset(&ifr.ifr_addr, 0, sizeof (ifr.ifr_addr));
 	ifr.ifr_addr.sa_family = AF_INET;
 	
@@ -193,7 +192,7 @@ int openchangesim_delete_interfaces(struct ocsim_context *ctx,
 	for (i = 0; i <= el->ip_used; i++) {
 		ret = openchangesim_delete_interface_tap(ctx->mem_ctx, el->interfaces_fd[i]);
 		logstr = talloc_asprintf(ctx->mem_ctx,
-				"[*] Interface %d (fd %d) deleted\n",
+				"[*] Interface tap%d (fd %d) deleted\n",
 				i, el->interfaces_fd[i]);
 		openchangesim_printlog(f, logstr);
 		talloc_free(logstr);
