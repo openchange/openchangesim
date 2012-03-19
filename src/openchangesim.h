@@ -306,7 +306,7 @@ uint32_t module_sendmail_init(struct ocsim_context *);
 uint32_t module_cleanup_init(struct ocsim_context *);
 uint32_t module_cleanup_run(TALLOC_CTX *, struct mapi_session *);
 
-void error_message (struct ocsim_context *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+void ocsim_error_message (struct ocsim_context *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 
 __END_DECLS
 

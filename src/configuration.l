@@ -206,11 +206,11 @@ attachment		{ return kw_ATTACHMENT; }
 		}
 .      		{ 
 		struct ocsim_context *ctx = yyextra;
-		error_message(ctx, "Ignoring char(%c)\n", *yytext); 
+		ocsim_error_message(ctx, "Ignoring char(%c)\n", *yytext);
 		}
 %%
 
-void error_message(struct ocsim_context *ctx, const char *format, ...)
+void ocsim_error_message(struct ocsim_context *ctx, const char *format, ...)
 {
 	va_list	args;
 
@@ -224,6 +224,6 @@ void error_message(struct ocsim_context *ctx, const char *format, ...)
 
 static void unterminated(struct ocsim_context *ctx, const char *type, unsigned int start_lineno)
 {
-    error_message(ctx, "unterminated %s, possibly started on line %d\n", type, start_lineno);
+    ocsim_error_message(ctx, "unterminated %s, possibly started on line %d\n", type, start_lineno);
     fflush(0);
 }
