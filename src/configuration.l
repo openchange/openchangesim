@@ -179,7 +179,12 @@ attachment		{ return kw_ATTACHMENT; }
 			    if(c == EOF)
 				unterminated(ctx, "string", start_lineno);
 			    *p++ = '\0';
-			    yylval->name = buf;
+			    /*
+			       It's a bit sloppy this as we leak memory,
+			       but it's better than pointing to a variable
+			       allocated on the stack
+			     */
+			    yylval->name = talloc_strdup(NULL, buf);
 			    return STRING; 
 			}
 \$[-A-Za-z0-9_]+      	{ char *y = yytext + 1;
