@@ -333,7 +333,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	set_SPropValue_proptag(&lpProps[prop_index], PR_MSG_EDITOR_FORMAT, (const void *)&format);
 	prop_index++;
 
-	retval = SetProps(&obj_message, lpProps, prop_index);
+	retval = SetProps(&obj_message, 0, lpProps, prop_index);
 	talloc_free(subject);
 	talloc_free(body);
 	if (retval != MAPI_E_SUCCESS) {
@@ -363,7 +363,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 			count_props_attach = 3;
 
 			/* SetProps */
-			retval = SetProps(&obj_attach, props_attach, count_props_attach);
+			retval = SetProps(&obj_attach, 0, props_attach, count_props_attach);
 			if (retval != MAPI_E_SUCCESS) return retval;
 
 			/* Stream operations */
