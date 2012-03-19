@@ -26,8 +26,8 @@ uint32_t openchangesim_register_modules(struct ocsim_context *ctx)
 	uint32_t	ret;
 
 	DEBUG(0, (DEBUG_FORMAT_STRING, "Initializing modules"));
-	ret = module_fetchmail_init(ctx);
 	ret = module_sendmail_init(ctx);
+	ret = module_fetchmail_init(ctx);
 
 	return ret;
 }
