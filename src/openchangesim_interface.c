@@ -102,7 +102,7 @@ int openchangesim_create_interface_tap(TALLOC_CTX *mem_ctx,
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI /* | IFF_UP | IFF_RUNNING */;
 	strncpy(ifr.ifr_name, tap, sizeof (ifr.ifr_name) - 1);
 	if (ioctl(tap_fd, TUNSETIFF, (void *) &ifr) < 0) {
-		talloc_free(tap);
+		fprintf(stderr, "ioctl failed\n");
 		perror("TUNSETIFF");
 		return -1;
 	}
