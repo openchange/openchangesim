@@ -172,11 +172,12 @@ struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *ctx, 
 uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, char *profname)
 {
 	TALLOC_CTX		*mem_ctx;
-	struct mapi_session	*session = NULL;
+	struct mapi_session	session;
 	struct ocsim_module	*el = NULL;
 	enum MAPISTATUS 	retval;
 
 	mem_ctx = talloc_named(NULL, 0, "openchangesim_modules_run");
+	session = talloc_zero(mem_ctx, struct mapi_session);
 	if (!mem_ctx) {
 		DEBUG(0, ("No more memory available\n"));
 		return OCSIM_ERROR;
@@ -203,6 +204,7 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_contex
 	}
 
 	module_cleanup_run(ctx, session);
+	talloc_free(mem_ctx);
 
 	return OCSIM_SUCCESS;
 }
