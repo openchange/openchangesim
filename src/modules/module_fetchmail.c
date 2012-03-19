@@ -366,10 +366,16 @@ static uint32_t module_fetchmail_run(TALLOC_CTX *mem_ctx,
 				     struct mapi_session *session)
 {
 	struct ocsim_log		*log;
+	int ret;
 
 	log = openchangesim_log_init(mem_ctx);
 	openchangesim_log_start(log);
-	_module_fetchmail_run(mem_ctx, session);
+	ret = _module_fetchmail_run(mem_ctx, session);
+	if (ret != OCSIM_SUCCESS) {
+		openchangesim_log_string("%s module returned: %s",
+						FETCHMAIL_MODULE_NAME,
+						mapi_get_errstr(GetLastError()));
+	}
 	openchangesim_log_end(log, FETCHMAIL_MODULE_NAME, NULL, session->profile->localaddr);
 	openchangesim_log_close(log);
 
