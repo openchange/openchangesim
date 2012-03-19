@@ -221,6 +221,8 @@ struct ocsim_context
 	const char				*filename;
 	FILE					*logfp;
 	pid_t					*pid;
+	unsigned int			childs;
+	unsigned int			active_childs;
 };
 
 #ifndef __BEGIN_DECLS

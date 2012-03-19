@@ -23,6 +23,28 @@
 #include <sys/wait.h>
 
 #include "src/openchangesim.h"
+static struct ocsim_context *c = NULL;
+
+static void sigchild_hdl(int signal, siginfo_t *siginfo, void *contex)
+{
+	pid_t pid;
+	unsigned i;
+
+	while ((pid = waitpid(-1, NULL, WNOHANG)) >0) {
+		for (i=0; i < c->childs; i++) {
+			if (c->pid[i] == pid) {
+				c->active_childs--;
+				if (siginfo->si_code != CLD_EXITED) {
+				fprintf(stdout,
+					"Process %ld exited with signal %d !!!\n",
+					(long)siginfo->si_pid,
+					siginfo->si_status);
+				}
+				break;
+			}
+		}
+	}
+}
 
 uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, const char *server)
 {
@@ -31,6 +53,17 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 	int			i;
 	int			range;
 	int			index = 0;
+	struct sigaction act;
+
+	memset (&act, '\0', sizeof(act));
+	act.sa_sigaction = &sigchild_hdl;
+
+	act.sa_flags = SA_SIGINFO;
+
+	if (sigaction(SIGCHLD, &act, NULL) < 0) {
+		perror ("sigaction");
+		return OCSIM_ERROR;
+	}
 
 	el = configuration_validate_server(ctx, server);
 	OCSIM_RETVAL_IF(!el, OCSIM_ERROR, OCSIM_INVALID_SERVER, NULL);
@@ -39,10 +72,16 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 
 	ctx->pid = talloc_array(ctx, pid_t, range);
 
+	ctx->childs = 0;
+	ctx->active_childs = 0;
+	c = ctx;
+
 	index = el->range_start;
 	for (i = 0; i < range; i++) {
 		pid = fork();
 		if (pid > 0) {
+			ctx->childs++;
+			ctx->active_childs++;
 			ctx->pid[i] = pid;
 		} else {
 			if (pid == 0) {
@@ -69,18 +108,13 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 uint32_t openchangesim_fork_process_end(struct ocsim_context *ctx, const char *server)
 {
 	struct ocsim_server	*el;
-	int			i;
 	int			range;
-	int			status;
 
 	el = configuration_validate_server(ctx, server);
 	OCSIM_RETVAL_IF(!el, OCSIM_ERROR, OCSIM_INVALID_SERVER, NULL);
 
 	range = el->range_end - el->range_start;
 
-	for (i = 0; i < range; i++) {
-		waitpid(ctx->pid[i], &status, 0);
-		ctx->pid[i] = 0;
-	}
+	while(ctx->active_childs);
 	return OCSIM_SUCCESS;
 }
