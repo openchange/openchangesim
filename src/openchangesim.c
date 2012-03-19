@@ -58,7 +58,7 @@ uint32_t callback(struct SRowSet *rowset, void *private)
 
    \return MAPI_E_SUCCESS on success, otherwise MAPI error
  */
-enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
+enum MAPISTATUS openchangesim_DuplicateProfile(struct mapi_context *mapi_ctx, TALLOC_CTX *mem_ctx,
 					       char *profname_src,
 					       struct ocsim_server *el)
 {
@@ -80,10 +80,10 @@ enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
 		profname_dst = talloc_asprintf(mem_ctx, PROFNAME_TEMPLATE_NB,
 					       el->name, el->generic_user, i, el->realm);
 
-		retval = OpenProfile(&profile, profname_dst, NULL);
+		retval = OpenProfile(mapi_ctx, &profile, profname_dst, NULL);
 		if (retval != MAPI_E_SUCCESS) {
 			username_dst = talloc_asprintf(mem_ctx, PROFNAME_USER, el->generic_user, i);
-			retval = DuplicateProfile(profname_src, profname_dst, username_dst);
+			retval = DuplicateProfile(mapi_ctx, profname_src, profname_dst, username_dst);
 			if (retval) {
 				talloc_free(profname_dst);
 				talloc_free(username_dst);
@@ -91,7 +91,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
 			}
 			ip_address = talloc_asprintf(mem_ctx, "%d.%d.%d.%d", el->ip_current[0], 
 						     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
-			mapi_profile_modify_string_attr(profname_dst, "localaddress", ip_address);
+			mapi_profile_modify_string_attr(mapi_ctx, profname_dst, "localaddress", ip_address);
 			if (openchangesim_create_interface_tap(mem_ctx, el->ip_used + 1, ip_address) < 0) {
 				exit (1);
 			}
@@ -127,7 +127,7 @@ enum MAPISTATUS openchangesim_DuplicateProfile(TALLOC_CTX *mem_ctx,
 
    \return MAPI_E_SUCCESS on success, otherwise MAPI error
  */
-enum MAPISTATUS openchangesim_CreateProfile(TALLOC_CTX *mem_ctx, 
+enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLOC_CTX *mem_ctx,
 					    struct ocsim_server *el, 
 					    char *profname,
 					    const char *username)
@@ -143,27 +143,27 @@ enum MAPISTATUS openchangesim_CreateProfile(TALLOC_CTX *mem_ctx,
 	char			hostname[256];
 	const char		*workstation = NULL;
 
-	retval = CreateProfile(profname, username, el->generic_password, 0);
+	retval = CreateProfile(mapi_ctx, profname, username, el->generic_password, 0);
 	if (retval != MAPI_E_SUCCESS) {
 		mapi_errstr("CreateProfile", GetLastError());
 		return retval;
 	}
 
-	mapi_profile_add_string_attr(profname, "binding", el->address);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "binding", el->address);
 
 	gethostname(hostname, sizeof(hostname) - 1);
 	hostname[sizeof(hostname) - 1] = 0;
 	workstation = hostname;
-	mapi_profile_add_string_attr(profname, "workstation", workstation);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "workstation", workstation);
 
-	mapi_profile_add_string_attr(profname, "domain", el->domain);
-	mapi_profile_add_string_attr(profname, "realm", el->realm);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "domain", el->domain);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "realm", el->realm);
 	
 	/* WARNING: make this generic */
 	exchange_version_str = talloc_asprintf(mem_ctx, "%d", 1);
-	mapi_profile_add_string_attr(profname, "exchange_version", exchange_version_str);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "exchange_version", exchange_version_str);
 	talloc_free(exchange_version_str);
-	mapi_profile_add_string_attr(profname, "seal", "false");
+	mapi_profile_add_string_attr(mapi_ctx, profname, "seal", "false");
 	
 	locale = mapi_get_system_locale();
 	cpid = mapi_get_cpid_from_locale(locale);
@@ -172,18 +172,18 @@ enum MAPISTATUS openchangesim_CreateProfile(TALLOC_CTX *mem_ctx,
 	cpid_str = talloc_asprintf(mem_ctx, "%d", cpid);
 	lcid_str = talloc_asprintf(mem_ctx, "0x%.4x", lcid);
 	
-	mapi_profile_add_string_attr(profname, "codepage", cpid_str);
-	mapi_profile_add_string_attr(profname, "language", lcid_str);
-	mapi_profile_add_string_attr(profname, "method", lcid_str);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "codepage", cpid_str);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "language", lcid_str);
+	mapi_profile_add_string_attr(mapi_ctx, profname, "method", lcid_str);
 	
 	talloc_free(cpid_str);
 	talloc_free(lcid_str);
 
-	retval = MapiLogonProvider(&session, profname, el->generic_password, PROVIDER_ID_NSPI);
+	retval = MapiLogonProvider(mapi_ctx, &session, profname, el->generic_password, PROVIDER_ID_NSPI);
 	if (retval != MAPI_E_SUCCESS) {
 		mapi_errstr("MapiLogonProvider", GetLastError());
 		printf("Deleting profile\n");
-		if ((retval = DeleteProfile(profname)) != MAPI_E_SUCCESS) {
+		if ((retval = DeleteProfile(mapi_ctx, profname)) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
 		}
 		return retval;
@@ -194,7 +194,7 @@ enum MAPISTATUS openchangesim_CreateProfile(TALLOC_CTX *mem_ctx,
 	if (retval != MAPI_E_SUCCESS && retval != 0x1) {
 		mapi_errstr("ProcessNetworkProfile", GetLastError());
 		printf("Deleting profile\n");
-		if ((retval = DeleteProfile(profname)) != MAPI_E_SUCCESS) {
+		if ((retval = DeleteProfile(mapi_ctx, profname)) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
 		}
 		return retval;
@@ -214,7 +214,7 @@ enum MAPISTATUS openchangesim_CreateProfile(TALLOC_CTX *mem_ctx,
 
    \return OCSIM_SUCCESS on success, otherwise OCSIM_ERROR
  */
-int openchangesim_profile(struct ocsim_context *ctx, const char *server)
+int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *ctx, const char *server)
 {
 	enum MAPISTATUS		retval;
 	struct ocsim_server	*el;
@@ -236,7 +236,7 @@ int openchangesim_profile(struct ocsim_context *ctx, const char *server)
 	case false:
 		profname = talloc_asprintf(ctx->mem_ctx, PROFNAME_TEMPLATE, 
 					   el->name, el->generic_user, el->realm);
-		retval = OpenProfile(&profile, profname, NULL);
+		retval = OpenProfile(mapi_ctx, &profile, profname, NULL);
 		if (retval != MAPI_E_SUCCESS) {
 			if (el->range_start > 0) {
 				username = talloc_asprintf(ctx->mem_ctx, PROFNAME_USER, 
@@ -244,7 +244,7 @@ int openchangesim_profile(struct ocsim_context *ctx, const char *server)
 			} else {
 				username = talloc_strdup(ctx->mem_ctx, el->generic_user);
 			}
-			retval = openchangesim_CreateProfile(ctx->mem_ctx, el, profname, username);
+			retval = openchangesim_CreateProfile(mapi_ctx, ctx->mem_ctx, el, profname, username);
 			talloc_free(username);
 		}
 		talloc_free(profname);
@@ -256,15 +256,15 @@ int openchangesim_profile(struct ocsim_context *ctx, const char *server)
 					     el->ip_current[1], el->ip_current[2], el->ip_current[3]);
 		profname = talloc_asprintf(ctx->mem_ctx, PROFNAME_TEMPLATE_NB, el->name,
 					   el->generic_user, el->range_start, el->realm);
-		retval = OpenProfile(&profile, profname, NULL);
+		retval = OpenProfile(mapi_ctx, &profile, profname, NULL);
 		if (retval != MAPI_E_SUCCESS) {
 			username = talloc_asprintf(ctx->mem_ctx, PROFNAME_USER,
 						   el->generic_user, el->range_start);
-			retval = openchangesim_CreateProfile(ctx->mem_ctx, el,
+			retval = openchangesim_CreateProfile(mapi_ctx, ctx->mem_ctx, el,
 							     profname, username);
 			talloc_free(username);
 			if (retval) return OCSIM_ERROR;
-			mapi_profile_add_string_attr(profname, "localaddress", ip_address);
+			mapi_profile_add_string_attr(mapi_ctx, profname, "localaddress", ip_address);
 		}
 		if (openchangesim_create_interface_tap(ctx->mem_ctx, el->ip_used, ip_address) < 0) {
 			exit (1);
@@ -272,7 +272,7 @@ int openchangesim_profile(struct ocsim_context *ctx, const char *server)
 		talloc_free(ip_address);
 
 		/* Duplicate other profiles */
-		openchangesim_DuplicateProfile(ctx->mem_ctx, profname, el);
+		openchangesim_DuplicateProfile(mapi_ctx, ctx->mem_ctx, profname, el);
 		talloc_free(profname);
 		break;
 	}
@@ -328,6 +328,7 @@ int main(int argc, const char *argv[])
 	const char		*opt_debug = NULL;
 	const char		*opt_conf_file = NULL;
 	const char		*opt_server = NULL;
+	struct mapi_context	*mapi_ctx = NULL;
 
 	enum { OPT_PROFILE_DB=1000, OPT_DEBUG, OPT_DUMPDATA, OPT_VERSION,
 	       OPT_CONFIG, OPT_CONFCHECK, OPT_CONFDUMP, OPT_SERVER_LIST, 
@@ -439,6 +440,7 @@ int main(int argc, const char *argv[])
 	(void) signal(SIGINT, (sighandler_t) signal_kill_openchangesim);
 #endif
 
+
 	/* Step 2. Sanity check on options */
 	if (!opt_profdb) {
 		char		*conf_path;
@@ -472,16 +474,16 @@ int main(int argc, const char *argv[])
 	}
 
 	/* Step 3. Initialize MAPI subsystem */
-	retval = MAPIInitialize(opt_profdb);
+	retval = MAPIInitialize(&mapi_ctx, opt_profdb);
 	if (retval != MAPI_E_SUCCESS) {
 		mapi_errstr("MAPIInitialize", GetLastError());
 		exit (1);
 	}
 
 	/* Step 4. Set debug options */
-	SetMAPIDumpData(opt_dumpdata);
+	SetMAPIDumpData(mapi_ctx, opt_dumpdata);
 	if (opt_debug) {
-		SetMAPIDebugLevel(atoi(opt_debug));
+		SetMAPIDebugLevel(mapi_ctx, atoi(opt_debug));
 	}
 
 	/* Step 5. Load modules */
@@ -491,13 +493,13 @@ int main(int argc, const char *argv[])
 	}
 
 	/* Step 6. Perform profile operations */
-	ret = openchangesim_profile(ctx, opt_server);
+	ret = openchangesim_profile(mapi_ctx, ctx, opt_server);
 	if (ret == OCSIM_ERROR) {
 		goto end;
 	}
 
 	/* Step 7. Call fork process model */
-	ret = openchangesim_fork_process_start(ctx, opt_server);
+	ret = openchangesim_fork_process_start(ctx, mapi_ctx, opt_server);
 	if (ret == OCSIM_ERROR) {
 		DEBUG(0, ("Error with the prefork model\n"));
 		goto end;
@@ -520,7 +522,7 @@ int main(int argc, const char *argv[])
 	/* Uninitialize MAPI subsystem */
 end:
 	poptFreeContext(pc);
-	MAPIUninitialize();
+	MAPIUninitialize(mapi_ctx);
 	talloc_free(mem_ctx);
 
 	return 0;

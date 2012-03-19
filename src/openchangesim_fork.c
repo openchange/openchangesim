@@ -24,7 +24,7 @@
 
 #include "src/openchangesim.h"
 
-uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, const char *server)
+uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, const char *server)
 {
 	struct ocsim_server	*el;
 	pid_t			pid;
@@ -54,7 +54,7 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, const char 
 				mem_ctx = talloc_named(NULL, 0, "fork");
 				profname = talloc_asprintf(mem_ctx, PROFNAME_TEMPLATE_NB,
 							   el->name, el->generic_user, index, el->realm);
-				openchangesim_modules_run(ctx, profname);
+				openchangesim_modules_run(ctx, mapi_ctx, profname);
 				talloc_free(mem_ctx);
 				exit (0);
 			} else {

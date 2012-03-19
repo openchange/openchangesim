@@ -169,12 +169,12 @@ struct ocsim_scenario_case *module_get_scenario_data(struct ocsim_context *ctx, 
 	return NULL;
 }
 
-uint32_t openchangesim_modules_run(struct ocsim_context *ctx, char *profname)
+uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, char *profname)
 {
 	TALLOC_CTX		*mem_ctx;
-	enum MAPISTATUS		retval;
 	struct mapi_session	*session = NULL;
 	struct ocsim_module	*el = NULL;
+	enum MAPISTATUS 	retval;
 
 	mem_ctx = talloc_named(NULL, 0, "openchangesim_modules_run");
 	if (!mem_ctx) {
@@ -182,7 +182,7 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, char *profname)
 		return OCSIM_ERROR;
 	}
 
-	retval = MapiLogonEx(&session, profname, NULL);
+	retval = MapiLogonEx(mapi_ctx, &session, profname, NULL);
 	if (retval) {
 		openchangesim_log_string("Opening session for %s failed", profname);
 		return OCSIM_ERROR;
