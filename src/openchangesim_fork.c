@@ -1,5 +1,5 @@
 /*
-   OpenChangeSim Fork modele
+   OpenChangeSim Fork model
 
    OpenChange Project
 
