@@ -219,6 +219,14 @@ static uint32_t _module_fetchmail_run(TALLOC_CTX *mem_ctx,
 	unsigned char		buf[MAX_READ_SIZE];
 
 	/* Log onto the store */
+	memset(&obj_store, 0, sizeof(mapi_object_t));
+	memset(&obj_inbox, 0, sizeof(mapi_object_t));
+	memset(&obj_table, 0, sizeof(mapi_object_t));
+	memset(&obj_message, 0, sizeof(mapi_object_t));
+	memset(&obj_table_attach, 0, sizeof(mapi_object_t));
+	memset(&obj_attach, 0, sizeof(mapi_object_t));
+	memset(&obj_stream, 0, sizeof(mapi_object_t));
+
 	mapi_object_init(&obj_store);
 	retval = OpenMsgStore(session, &obj_store);
 	if (retval) {
