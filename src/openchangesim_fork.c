@@ -21,10 +21,12 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/prctl.h>
 
 #include "src/openchangesim.h"
 extern struct ocsim_signal_context sig_ctx;
 static struct ocsim_context *c = NULL;
+static char cmdstring[512] = DEFAULT_PROFPATH"/gdb_backtrace %d";
 
 static void sigchild_hdl(int signal, siginfo_t *siginfo, void *contex)
 {
@@ -45,7 +47,36 @@ static void sigchild_hdl(int signal, siginfo_t *siginfo, void *contex)
 			}
 		}
 	}
-	talloc_free(c->pid);
+	if (!c->active_childs) {
+		talloc_free(c->pid);
+	}
+}
+
+
+static void ocsim_panic_default(int sig)
+{
+	int result;
+
+	/*
+	 * Make sure all children can attach a debugger.
+	 */
+	char pidstr[20];
+#if defined(PR_SET_PTRACER)
+	prctl(PR_SET_PTRACER, getpid(), 0, 0, 0);
+#endif
+
+	snprintf(pidstr, sizeof(pidstr), "%d", (int) getpid());
+	all_string_sub(cmdstring, "%d", pidstr, sizeof(cmdstring));
+	result = system(cmdstring);
+
+	if (result == -1)
+		fprintf(stderr, "Fork failed for %s, return code %s\n", cmdstring,
+			strerror(errno));
+	else
+		fprintf(stderr, "%s exited with return code %d\n", cmdstring, result);
+
+	signal(SIGABRT, SIG_DFL);
+	abort();
 }
 
 uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, const char *server)
@@ -55,7 +86,12 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 	int			i;
 	int			range;
 	int			index = 0;
+	char			*home;
 	struct sigaction act;
+
+	/* Precalculate the command for trapping signals */
+	home = getenv("HOME");
+	all_string_sub(cmdstring, "%s", home, sizeof(cmdstring));
 
 	memset (&act, '\0', sizeof(act));
 	act.sa_sigaction = &sigchild_hdl;
@@ -90,6 +126,8 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 				TALLOC_CTX	*mem_ctx;
 				char		*profname;
 
+				signal(SIGSEGV, ocsim_panic_default);
+				signal(SIGABRT, ocsim_panic_default);
 				/* Mark interfaces deregistered in the child so that we don't try to
 				 * deregister them multiple times
 				 */
