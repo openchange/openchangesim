@@ -401,8 +401,9 @@ uint32_t module_fetchmail_init(struct ocsim_context *ctx)
 	module->get_ref_count = module_get_ref_count;
 	module->scenario = module_get_scenario(ctx, FETCHMAIL_MODULE_NAME);
 	module->cases = module_get_scenario_data(ctx, FETCHMAIL_MODULE_NAME);
-	
-	ret = openchangesim_module_register(ctx, module);
+
+	if (module->scenario)
+		ret = openchangesim_module_register(ctx, module);
 
 	return ret;
 }

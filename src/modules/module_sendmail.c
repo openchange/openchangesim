@@ -442,7 +442,8 @@ uint32_t module_sendmail_init(struct ocsim_context *ctx)
 	module->scenario = module_get_scenario(ctx, SENDMAIL_MODULE_NAME);
 	module->cases = module_get_scenario_data(ctx, SENDMAIL_MODULE_NAME);
 
-	ret = openchangesim_module_register(ctx, module);
+	if (module->scenario)
+		ret = openchangesim_module_register(ctx, module);
 
 	return ret;
 }
