@@ -196,6 +196,12 @@ uint32_t openchangesim_modules_run(struct ocsim_context *ctx, struct mapi_contex
 		}
 	} while (openchangesim_module_ref_count(ctx) == true);
 
+	retval = MapiLogonEx(mapi_ctx, &session, profname, NULL);
+	if (retval) {
+		openchangesim_log_string("Opening session for %s failed", profname);
+		return OCSIM_ERROR;
+	}
+
 	module_cleanup_run(ctx, session);
 
 	return OCSIM_SUCCESS;
