@@ -177,7 +177,7 @@ static enum MAPISTATUS fetchmail_get_contents(TALLOC_CTX *mem_ctx,
 					  PR_HASATTACH,
 					  PR_MESSAGE_CODEPAGE);
 	lpProps = talloc_zero(mem_ctx, struct SPropValue);
-	retval = GetProps(obj_message, SPropTagArray, &lpProps, &count);
+	retval = GetProps(obj_message, 0, SPropTagArray, &lpProps, &count);
 	MAPIFreeBuffer(SPropTagArray);
 	MAPI_RETVAL_IF(retval, retval, NULL);
 
@@ -275,7 +275,7 @@ static uint32_t _module_fetchmail_run(TALLOC_CTX *mem_ctx,
 
 				SPropTagArray = set_SPropTagArray(mem_ctx, 0x1, PR_HASATTACH);
 				lpProps = talloc_zero(mem_ctx, struct SPropValue);
-				retval = GetProps(&obj_message, SPropTagArray, &lpProps, &count);
+				retval = GetProps(&obj_message, 0, SPropTagArray, &lpProps, &count);
 				MAPIFreeBuffer(SPropTagArray);
 				if (retval) {
 					mapi_errstr("GetProps", GetLastError());
@@ -314,7 +314,7 @@ static uint32_t _module_fetchmail_run(TALLOC_CTX *mem_ctx,
 												  PR_ATTACH_LONG_FILENAME,
 												  PR_ATTACH_SIZE);
 								lpProps2 = talloc_zero(mem_ctx, struct SPropValue);
-								retval = GetProps(&obj_attach, SPropTagArray, &lpProps2, &count2);
+								retval = GetProps(&obj_attach, 0, SPropTagArray, &lpProps2, &count2);
 								MAPIFreeBuffer(SPropTagArray);
 								if (retval != MAPI_E_SUCCESS) {
 									MAPIFreeBuffer(lpProps2);
