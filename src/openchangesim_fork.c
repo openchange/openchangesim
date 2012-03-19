@@ -122,6 +122,7 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 			ctx->active_childs++;
 			ctx->pid[i] = pid;
 		} else {
+			ctx->active_childs = 1;
 			if (pid == 0) {
 				TALLOC_CTX	*mem_ctx;
 				char		*profname;
