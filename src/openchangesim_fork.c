@@ -45,6 +45,7 @@ static void sigchild_hdl(int signal, siginfo_t *siginfo, void *contex)
 			}
 		}
 	}
+	talloc_free(c->pid);
 }
 
 uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi_context *mapi_ctx, const char *server)
