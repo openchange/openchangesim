@@ -193,7 +193,7 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 	if (retval != MAPI_E_SUCCESS) {
 		mapi_errstr("MapiLogonProvider", GetLastError());
 		openchangesim_printlog(stdout, "Deleting profile\n");
-		if ((retval = DeleteProfile(mapi_ctx, profname)) != MAPI_E_SUCCESS) {
+		if (DeleteProfile(mapi_ctx, profname) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
 		}
 		return retval;
@@ -204,7 +204,7 @@ enum MAPISTATUS openchangesim_CreateProfile(struct mapi_context *mapi_ctx, TALLO
 	if (retval != MAPI_E_SUCCESS && retval != 0x1) {
 		mapi_errstr("ProcessNetworkProfile", GetLastError());
 		openchangesim_printlog(stdout, "Deleting profile\n");
-		if ((retval = DeleteProfile(mapi_ctx, profname)) != MAPI_E_SUCCESS) {
+		if (DeleteProfile(mapi_ctx, profname) != MAPI_E_SUCCESS) {
 			mapi_errstr("DeleteProfile", GetLastError());
 		}
 		return retval;
