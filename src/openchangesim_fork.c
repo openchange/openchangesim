@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 
 #include "src/openchangesim.h"
+extern struct ocsim_signal_context sig_ctx;
 static struct ocsim_context *c = NULL;
 
 static void sigchild_hdl(int signal, siginfo_t *siginfo, void *contex)
@@ -88,6 +89,10 @@ uint32_t openchangesim_fork_process_start(struct ocsim_context *ctx, struct mapi
 				TALLOC_CTX	*mem_ctx;
 				char		*profname;
 
+				/* Mark interfaces deregistered in the child so that we don't try to
+				 * deregister them multiple times
+				 */
+				sig_ctx.interface_deregistered = true;
 				index += i;
 
 				mem_ctx = talloc_named(NULL, 0, "fork");

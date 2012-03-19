@@ -225,6 +225,12 @@ struct ocsim_context
 	unsigned int			active_childs;
 };
 
+struct ocsim_signal_context {
+	struct ocsim_context	*ctx;
+	const char		*opt_server;
+	bool			interface_deregistered;
+};
+
 #ifndef __BEGIN_DECLS
 #ifdef __cplusplus
 #define __BEGIN_DECLS		extern "C" {

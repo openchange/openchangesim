@@ -19,7 +19,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <sys/wait.h>
 #include "src/openchangesim.h"
+struct ocsim_signal_context sig_ctx;
 
 void openchangesim_printlog(FILE *logfp, const char *s)
 {
@@ -336,7 +338,18 @@ static int check_range_status(struct ocsim_context *ctx, const char *server)
 
 static void signal_kill_openchangesim(void)
 {
+	bool unregister = !sig_ctx.interface_deregistered;
+	pid_t status;
+
+	sig_ctx.interface_deregistered = true;
+
 	(void) signal(SIGINT, SIG_DFL);
+	if (sig_ctx.ctx != NULL &&
+			sig_ctx.opt_server !=NULL &&
+			unregister) {
+		openchangesim_delete_interfaces(sig_ctx.ctx, sig_ctx.opt_server);
+	}
+	waitpid(-1, &status, 0);
 	exit (1);
 }
 
@@ -378,6 +391,7 @@ int main(int argc, const char *argv[])
 	};
 
 	mem_ctx = talloc_named(NULL, 0, "openchangesim");
+	memset(&sig_ctx, 0, sizeof(struct ocsim_signal_context));
 
 	/* Step 1. Process command line options */
 	pc = poptGetContext("openchangesim", argc, argv, long_options, 0);
@@ -462,6 +476,8 @@ int main(int argc, const char *argv[])
 		exit (0);
 	}
 
+	sig_ctx.opt_server = opt_server;
+	sig_ctx.ctx = ctx;
 	/* catch CTRL-C */
 #if defined (__FreeBSD__)
 	(void) signal(SIGINT, (sig_t) signal_kill_openchangesim);
