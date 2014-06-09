@@ -3,7 +3,7 @@
 
    OpenChange Project
 
-   Copyright (C) Julien Kerihuel 2010
+   Copyright (C) Julien Kerihuel 2010-2014
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 #include <libmapi/libmapi.h>
 #include <popt.h>
-#include "src/version.h"
+#include "version.h"
 
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -319,6 +319,6 @@ __END_DECLS
 
 extern int error_flag;
 
-#include "src/openchangesim_errors.h"
+#include "openchangesim_errors.h"
 
 #endif	/* !__OPENCHANGESIM_H__ */

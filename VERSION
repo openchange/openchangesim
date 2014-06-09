@@ -26,7 +26,7 @@ OPENCHANGESIM_VERSION_IS_SVN_SNAPSHOT=yes
 # e.g. OPENCHANGESIM_VERSION_RELEASE_NICKNAME=Nicky Nickname#
 #  ->  "0.7 (Nicky Nickname)"                               #
 #############################################################
-OPENCHANGESIM_VERSION_RELEASE_NICKNAME=PHASE1
+OPENCHANGESIM_VERSION_RELEASE_NICKNAME=PLUGJUNE
 
 
 #############################################################
@@ -35,4 +35,4 @@ OPENCHANGESIM_VERSION_RELEASE_NICKNAME=PHASE1
 # e.g. OPENCHANGESIM_VERSION_RELEASE_VERSION=0.8.2          #
 #  ->  "0.8.2 (Nicky Nickname)"                             #
 #############################################################
-OPENCHANGESIM_VERSION_RELEASE_NUMBER=0.1
+OPENCHANGESIM_VERSION_RELEASE_NUMBER=1.0

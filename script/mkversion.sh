@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 VERSION_FILE=$1
 OUTPUT_FILE=$2
@@ -8,7 +8,7 @@ if test -z "$VERSION_FILE";then
 fi
 
 if test -z "$OUTPUT_FILE";then
-    $OUTPUT_FILE="src/version.h"
+    $OUTPUT_FILE="version.h"
 fi
 
 OPENCHANGESIM_VERSION_STRING=$3
