@@ -31,11 +31,11 @@ void	yyerror(struct ocsim_context *, void *, char *);
 
 %}
 
-%pure_parser
+%pure-parser
 %parse-param {struct ocsim_context *ctx}
 %parse-param {void *scanner}
 %lex-param {yyscan_t *scanner}
-%name-prefix="ocsim_yy"
+%name-prefix "ocsim_yy"
 
 %union {
 	char		*name;
