@@ -3,7 +3,7 @@
 
    OpenChange Project
 
-   Copyright (C) Julien Kerihuel 2010
+   Copyright (C) Julien Kerihuel 2010-2014
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -153,6 +153,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	mapi_object_t		obj_stream;
 	struct SPropTagArray	*SPropTagArray;
 	struct SRowSet		*SRowSet = NULL;
+	struct PropertyRowSet_r	*RowSet = NULL;
 	struct SPropValue	SPropValue;
 	struct SPropValue	lpProps[4];
 	const char	       	*username[2];
@@ -212,18 +213,18 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	username[0] = (char *)session->profile->mailbox;
 	username[1] = NULL;
 
-	SRowSet = talloc_zero(mem_ctx, struct SRowSet);
-	flaglist = talloc_zero(mem_ctx, struct PropertyTagArray_r);
-
 	retval = ResolveNames(mapi_object_get_session(&obj_message), username, SPropTagArray, 
-			      &SRowSet, &flaglist, MAPI_UNICODE);
+			      &RowSet, &flaglist, MAPI_UNICODE);
 	MAPIFreeBuffer(SPropTagArray);
 	if (retval != MAPI_E_SUCCESS) {
 		mapi_errstr("ResolveNames", GetLastError());
-		talloc_free(SRowSet);
-		talloc_free(SPropTagArray);
-		talloc_free(flaglist);
+		MAPIFreeBuffer(flaglist);
 		return OCSIM_ERROR;
+	}
+
+	SRowSet = talloc_zero(mem_ctx, struct SRowSet);
+	if (RowSet) {
+		cast_PropertyRowSet_to_SRowSet(mem_ctx, RowSet, SRowSet);
 	}
 
 	/* Set Recipients */
