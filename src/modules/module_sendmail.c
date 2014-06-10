@@ -1,5 +1,5 @@
 /*
-   OpenChangeSim fetchmail module
+   OpenChangeSim sendmail module
 
    OpenChange Project
 
@@ -176,7 +176,7 @@ static uint32_t _module_sendmail_run(TALLOC_CTX *mem_ctx,
 	}
 
 	/* Open default outbox folder */
-	retval = GetDefaultFolder(&obj_store, &id_outbox, olFolderSentMail);
+	retval = GetDefaultFolder(&obj_store, &id_outbox, olFolderOutbox);
 	if (retval) {
 		mapi_errstr("GetDefaultFolder", GetLastError());
 		return OCSIM_ERROR;
