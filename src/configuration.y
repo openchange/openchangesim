@@ -27,7 +27,7 @@
 #define YYERROR_VERBOSE
 
 int	ocsim_yylex(void *, void *);
-void	yyerror(struct ocsim_context *, void *, char *);
+void	yyerror(struct ocsim_context *, void *, const char *);
 
 %}
 
@@ -330,7 +330,7 @@ scase		: kw_NAME EQUAL STRING SEMICOLON
 
 %%
 
-void yyerror(struct ocsim_context *ctx, void *scanner, char *s)
+void yyerror(struct ocsim_context *ctx, void *scanner, const char *s)
 {
 	printf("%s: %d\n", s, ctx->lineno);
 }
