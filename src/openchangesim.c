@@ -265,7 +265,7 @@ int openchangesim_profile(struct mapi_context *mapi_ctx, struct ocsim_context *c
 
 	profile = talloc(mapi_ctx->mem_ctx, struct mapi_profile);
 	/* Check if profiles already exist */
-	switch (el->range) {
+	switch ((int)el->range) {
 	case false:
 		profname = talloc_asprintf(ctx->mem_ctx, PROFNAME_TEMPLATE, 
 					   el->name, el->generic_user, el->realm);
