@@ -119,7 +119,7 @@ uint32_t module_get_ref_count(struct ocsim_module *module)
 }
 
 /**
-   \details Retrieve the counter (repeat) value for the module
+   \details Update the counter (repeat) value for the module
 
    \param module pointer to the OpenChangeSim module
    \param incr the incrementer value to use
@@ -135,9 +135,10 @@ uint32_t module_set_ref_count(struct ocsim_module *module, int incr)
 	scenario = (struct ocsim_scenario *)module->scenario;
 	if (!scenario) return OCSIM_ERROR;
 
-	scenario->repeat += incr;
-	if (scenario->repeat < 0) {
+	if (scenario->repeat == 0 && incr == -1) {
 		scenario->repeat = 0;
+	} else {
+		scenario->repeat += incr;
 	}
 
 	return OCSIM_SUCCESS;
